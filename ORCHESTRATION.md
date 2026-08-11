@@ -28,6 +28,14 @@ Workflow loop per phase (NO testing step):
 7. Scrum-master starts the next loop -> assigns the next phase to a fresh architect/engineer.
 8. Loop until all phases in the tracker are complete.
 
+## Subagent workspace & delegation
+
+- Run engineer/tester/devops subagents in a **dedicated `agents` workspace** (create it if it
+does not exist) and move each subagent's pane into it after spawn.
+- **Delegate NON-BLOCKING** (timeout 0, no `--wait`): tell each subagent who the orchestrator
+is and to notify the orchestrator when done (`herdr agent prompt orchestrator 'DONE <name>'`).
+- **Close the subagent's pane** when the orchestrator receives the `DONE` callback.
+
 ## The 3-phase loop (steps 1-3)
 
 | Phase | Step | Agent role |
