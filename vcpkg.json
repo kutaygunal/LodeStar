@@ -1,0 +1,8 @@
+{
+  "name": "lodestar",
+  "version-string": "0.1.0",
+  "description": "GNSS/SBAS Integrated Test & Verification Platform",
+  "dependencies": [
+    "sqlite3"
+  ]
+}

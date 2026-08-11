@@ -10,6 +10,9 @@ build/
 *.a
 *.dylib
 
+# vcpkg manifest install tree
+vcpkg_installed/
+
 # CMake
 CMakeCache.txt
 CMakeFiles/
