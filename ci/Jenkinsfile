@@ -1,0 +1,49 @@
+// Jenkinsfile
+// Lodestar CI pipeline skeleton (Phase 2).
+// Pipeline shape for this loop: checkout -> build -> self-verify.
+// No test agents in this loop; verification is build + smoke run.
+
+pipeline {
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Configure') {
+            steps {
+                sh 'cmake -B build -DCMAKE_BUILD_TYPE=Release'
+            }
+        }
+
+        stage('Build') {
+            steps {
+                sh 'cmake --build build --config Release'
+            }
+        }
+
+        stage('Self-verify') {
+            steps {
+                // Build + smoke run only (no test agents in this loop).
+                echo 'Self-verify: build succeeded. Smoke path added in Phase 3.'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Lodestar build pipeline completed successfully.'
+        }
+        failure {
+            echo 'Lodestar build pipeline failed.'
+        }
+    }
+}

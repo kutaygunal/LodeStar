@@ -1,0 +1,39 @@
+# Build artifacts
+build/
+*.o
+*.obj
+*.lib
+*.pdb
+*.exe
+*.dll
+*.so
+*.a
+*.dylib
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CTestTestfile.cmake
+*.vcxproj
+*.sln
+*.filters
+
+# Orchestration / loop state (not part of the product)
+docs/context-log.json
+docs/loop-state.md
+docs/loop-status.log
+docs/phase1-task.md
+docs/phase2-task.md
+docs/reborn-brief.md
+docs/working-rules.md
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
