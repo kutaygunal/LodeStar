@@ -10,7 +10,7 @@ assigned via a task file at `docs/<phase>-task.md` per the delegation rule.
 | # | Phase | Description | Priority | Status | Assigned to | Committed |
 |---|-------|-------------|----------|--------|-------------|-----------|
 | 1 | Architecture doc | Write `docs/architecture.md` capturing all decisions (C++-only service, adapter pattern, SQLite, real GNSS math, monorepo, Qt Widgets, cross-platform) | High | DONE | senior-architect-1 | yes |
-| 2 | Monorepo scaffold | Create folder structure with a compiling CMake build (Windows/Linux) | High | TODO | senior-engineer-2 | - |
+| 2 | Monorepo scaffold | Create folder structure with a compiling CMake build (Windows/Linux) | High | DONE | senior-engineer-2 | yes |
 | 3 | Phase 1 vertical slice | Build core/common, core/persistence (SQLite schema), core/tracelink (graph model) | High | TODO | senior-engineer-3 | - |
 
 Update the Status and Committed columns as phases complete. Commit tracker updates as
