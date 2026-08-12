@@ -9,11 +9,13 @@
 
 #include <sqlite3.h>
 
+#include "core/common/Time.h"
 #include "core/common/Uuid.h"
 
 namespace lodestar::integratehub {
 
 using lodestar::common::newUuid;
+using lodestar::common::nowIso;
 
 namespace {
 
@@ -100,7 +102,7 @@ common::Result<std::string> IntegrateHubService::createIssue(const Issue& issue)
     const std::string status =
         issue.status.empty() ? "open" : issue.status;
     const std::string createdAt =
-        issue.createdAt.empty() ? newUuid() : issue.createdAt;
+        issue.createdAt.empty() ? nowIso() : issue.createdAt;
     auto res = exec(db_.handle(),
                     "INSERT INTO integratehub_issues "
                     "(id, title, description, owner, status, created_at) "
@@ -115,10 +117,12 @@ common::Result<std::string> IntegrateHubService::createIssue(const Issue& issue)
 
 common::Result<std::vector<Issue>> IntegrateHubService::listIssues(
     Discipline d) {
+    // Same tiebreaker reasoning as coordinationFor() below: created_at alone
+    // doesn't distinguish rows created within the same nowIso() second.
     auto rows = query(db_.handle(),
                       "SELECT id, title, description, owner, status, created_at "
                       "FROM integratehub_issues WHERE owner=? "
-                      "ORDER BY created_at;",
+                      "ORDER BY created_at, rowid;",
                       {disciplineName(d)}, 6);
     if (rows.failed()) {
         return common::Result<std::vector<Issue>>::err(rows.error());
@@ -163,7 +167,7 @@ common::Result<std::string> IntegrateHubService::addCoordination(
             common::ErrorCode::InvalidArgument, "issueId must not be empty");
     }
     const std::string id = newUuid();
-    const std::string createdAt = newUuid();
+    const std::string createdAt = nowIso();
     auto res = exec(db_.handle(),
                     "INSERT INTO integratehub_coordination "
                     "(id, issue_id, note, created_at) VALUES (?,?,?,?);",
@@ -176,10 +180,17 @@ common::Result<std::string> IntegrateHubService::addCoordination(
 
 common::Result<std::vector<Coordination>>
 IntegrateHubService::coordinationFor(const std::string& issueId) {
+    // Order by created_at first, then by rowid (SQLite's implicit,
+    // monotonically-increasing insertion-order column) as the tiebreaker -
+    // matches the ordering documented in migration 022. `id` (a UUID) is
+    // *not* a valid tiebreaker: it doesn't correlate with insertion order,
+    // so two notes added within the same nowIso() second (a very common
+    // case for fast test/automation code) would sort randomly rather than
+    // oldest-first.
     auto rows = query(db_.handle(),
                       "SELECT id, issue_id, note, created_at "
                       "FROM integratehub_coordination WHERE issue_id=? "
-                      "ORDER BY created_at, id;",
+                      "ORDER BY created_at, rowid;",
                       {issueId}, 4);
     if (rows.failed()) {
         return common::Result<std::vector<Coordination>>::err(rows.error());
