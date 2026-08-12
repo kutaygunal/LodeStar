@@ -513,6 +513,89 @@ common::Result<Entity> TraceLinkService::updateEntity(const Entity& data) {
     return res;
 }
 
+common::Result<Entity> TraceLinkService::updateEntityIfVersion(const Entity& data,
+                                                                int expectedVersion) {
+    // BEGIN IMMEDIATE takes the write lock up front so the version check and
+    // the update are atomic: no other writer can interleave between them.
+    beginTx();
+    auto existingRes = dispatchGet(data.type, data.id);
+    if (existingRes.failed()) {
+        rollbackTx();
+        return common::Result<Entity>::err(existingRes.error());
+    }
+    if (!existingRes.value()) {
+        rollbackTx();
+        return common::Result<Entity>::err("entity not found: " + data.id);
+    }
+    const Entity before = *existingRes.value();
+    Entity existing = *existingRes.value();
+
+    // Optimistic-locking check: the caller's expected version must match the
+    // currently stored version, otherwise a concurrent edit happened.
+    if (existing.version != expectedVersion) {
+        rollbackTx();
+        return common::Result<Entity>::err(
+            common::ErrorCode::ConcurrencyError,
+            "concurrent-edit conflict: expected version " +
+                std::to_string(expectedVersion) + " but stored version is " +
+                std::to_string(existing.version));
+    }
+
+    if (!data.status.empty() && data.status != existing.status) {
+        std::string err = transitionError(data.type, existing.status, data.status);
+        if (!err.empty()) {
+            rollbackTx();
+            return common::Result<Entity>::err(err);
+        }
+        existing.status = data.status;
+    }
+    existing.version = existing.version + 1;
+    existing.name = data.name.empty() ? existing.name : data.name;
+    existing.text = data.text;
+    existing.externalId = data.externalId.empty() ? existing.externalId : data.externalId;
+    existing.typeAttr = data.typeAttr;
+    existing.priority = data.priority;
+    existing.source = data.source;
+    existing.owner = data.owner;
+    existing.rationale = data.rationale;
+    existing.verificationMethod = data.verificationMethod;
+    existing.safetyLevel = data.safetyLevel;
+    existing.direction = data.direction;
+    existing.sourceEntity = data.sourceEntity;
+    existing.targetEntity = data.targetEntity;
+    existing.dataItems = data.dataItems;
+    existing.protocol = data.protocol;
+    existing.resultStatus = data.resultStatus;
+    existing.severity = data.severity;
+    existing.likelihood = data.likelihood;
+    existing.date = data.date;
+    existing.parentId = data.parentId;
+    existing.sortOrder = data.sortOrder;
+    existing.tags = data.tags;
+    existing.updatedBy = data.updatedBy;
+    existing.updatedAt = now();
+
+    auto res = dispatchUpdate(data.type, existing);
+    if (res.failed()) {
+        rollbackTx();
+        return common::Result<Entity>::err(res.error());
+    }
+    auto changes = entityFieldChanges(before, existing);
+    for (const auto& [field, oldV, newV] : changes) {
+        auto audit = writeAudit(toString(data.type), existing.id, "update", field, oldV, newV);
+        if (audit.failed()) {
+            rollbackTx();
+            return common::Result<Entity>::err(audit.error());
+        }
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<Entity>::err(commit.error());
+    }
+    return res;
+}
+
 common::Result<void> TraceLinkService::removeEntity(EntityType type, const std::string& id) {
     auto existingRes = dispatchGet(type, id);
     if (existingRes.failed()) return common::Result<void>::err(existingRes.error());

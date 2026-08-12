@@ -48,6 +48,13 @@ public:
     // Bumps version, validates any status transition, persists changes.
     common::Result<Entity> updateEntity(const Entity& e);
 
+    // WP-4: optimistic-locking update. Updates the entity ONLY if its current
+    // stored version equals expectedVersion. Fails with a ConcurrencyError
+    // (concurrent-edit conflict) if the stored version differs. On success the
+    // version is bumped by one, exactly like updateEntity.
+    common::Result<Entity> updateEntityIfVersion(const Entity& e,
+                                                 int expectedVersion);
+
     // Soft delete: marks the entity Obsolete. Never hard-deletes.
     common::Result<void> removeEntity(EntityType type, const std::string& id);
 
