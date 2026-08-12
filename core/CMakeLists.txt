@@ -358,4 +358,16 @@ if(LODESTAR_BUILD_TESTS)
     target_compile_definitions(lodestar_wp5_coverage_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations"
         LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-6: Qt UI shell (left-nav tree + detail panel) --------
+    # Qt-independent wiring test (tree/detail data the Qt views consume). The
+    # Qt UI build itself is verified separately with LODESTAR_BUILD_UI=ON.
+    add_executable(lodestar_wp6_ui_tests
+        test/wp6_ui_tests.cpp)
+    target_link_libraries(lodestar_wp6_ui_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp6_ui_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()

@@ -4,21 +4,28 @@
 #include "ui/MainWindow.h"
 
 #include <QAction>
+#include <QSplitter>
 #include <QTabWidget>
 #include <QToolBar>
 
 #include "ui/CoverageDashboardView.h"
+#include "ui/DetailPanelView.h"
 #include "ui/GraphView.h"
 #include "ui/ImpactView.h"
 #include "ui/MatrixView.h"
+#include "ui/ProjectTreeView.h"
 
 namespace lodestar::ui {
 
 MainWindow::MainWindow(lodestar::persistence::Database& db, QWidget* parent)
     : QMainWindow(parent), db_(db), wiring_(db) {
     setWindowTitle("Lodestar — Trace Link");
-    resize(1100, 700);
+    resize(1200, 750);
 
+    // Left-nav project tree.
+    tree_ = new ProjectTreeView(this);
+
+    // Right side: existing tabs on top, detail panel below.
     tabs_ = new QTabWidget(this);
     matrix_ = new MatrixView(tabs_);
     graph_ = new GraphView(tabs_);
@@ -29,7 +36,27 @@ MainWindow::MainWindow(lodestar::persistence::Database& db, QWidget* parent)
     tabs_->addTab(graph_, "Graph");
     tabs_->addTab(impact_, "Impact");
     tabs_->addTab(dashboard_, "Coverage Dashboard");
-    setCentralWidget(tabs_);
+
+    detail_ = new DetailPanelView(this);
+    auto* right = new QSplitter(Qt::Vertical, this);
+    right->addWidget(tabs_);
+    right->addWidget(detail_);
+    right->setStretchFactor(0, 3);
+    right->setStretchFactor(1, 1);
+
+    splitter_ = new QSplitter(Qt::Horizontal, this);
+    splitter_->addWidget(tree_);
+    splitter_->addWidget(right);
+    splitter_->setStretchFactor(0, 1);
+    splitter_->setStretchFactor(1, 4);
+    setCentralWidget(splitter_);
+
+    // Selecting a node in the tree shows its detail panel.
+    connect(tree_, &ProjectTreeView::entitySelected, this,
+            [this](const QString& type, const QString& id) {
+                auto t = lodestar::tracelink::entityTypeFromString(type.toStdString());
+                if (t) showDetail(*t, id.toStdString());
+            });
 
     auto* bar = addToolBar("Main");
     auto* refreshAction = bar->addAction("Refresh");
@@ -46,6 +73,16 @@ MainWindow::MainWindow(lodestar::persistence::Database& db, QWidget* parent)
 
 void MainWindow::refreshAll() { refresh(); }
 
+void MainWindow::showDetail(lodestar::tracelink::EntityType type,
+                            const std::string& id) {
+    auto d = wiring_.detail(type, id);
+    if (d.isOk()) {
+        detail_->setModel(d.value());
+    } else {
+        detail_->clear();
+    }
+}
+
 void MainWindow::refresh() {
     // Single-pass refresh through the WP-G wiring service: builds all four
     // view models consistently (matrix rows == coverage items == number of
@@ -60,6 +97,10 @@ void MainWindow::refresh() {
 
     // Impact view needs a focus entity; default to the first requirement.
     if (!s.impacts.empty()) impact_->setModel(s.impacts.front());
+
+    // Left-nav project tree.
+    auto tree = wiring_.projectTree();
+    if (tree.isOk()) tree_->setModel(tree.value());
 }
 
 }  // namespace lodestar::ui

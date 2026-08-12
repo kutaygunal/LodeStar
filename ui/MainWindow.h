@@ -10,6 +10,7 @@
 
 class QTabWidget;
 class QToolBar;
+class QSplitter;
 
 namespace lodestar::ui {
 
@@ -17,6 +18,8 @@ class MatrixView;
 class GraphView;
 class ImpactView;
 class CoverageDashboardView;
+class ProjectTreeView;
+class DetailPanelView;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -25,6 +28,9 @@ public:
 
     void refreshAll();
 
+    // Populates the right-side detail panel for one entity.
+    void showDetail(lodestar::tracelink::EntityType type, const std::string& id);
+
 private slots:
     void refresh();
 
@@ -32,11 +38,14 @@ private:
     lodestar::persistence::Database& db_;
     lodestar::tracelink::UiWiringService wiring_;
 
+    QSplitter* splitter_;
+    ProjectTreeView* tree_;
     QTabWidget* tabs_;
     MatrixView* matrix_;
     GraphView* graph_;
     ImpactView* impact_;
     CoverageDashboardView* dashboard_;
+    DetailPanelView* detail_;
 };
 
 }  // namespace lodestar::ui

@@ -27,6 +27,31 @@ struct UiSnapshot {
     std::vector<ImpactViewModel> impacts;  // one per requirement (impact tab)
 };
 
+// One node of the left-nav project tree (nested hierarchy).
+struct ProjectTreeNode {
+    std::string id;
+    std::string externalId;
+    std::string type;      // "requirement" | "design" | "test_case" | ...
+    std::string name;
+    std::vector<ProjectTreeNode> children;  // ordered by sortOrder then id
+};
+
+// The right-side detail/properties panel for one selected entity.
+struct DetailPanelModel {
+    std::string id;
+    std::string externalId;
+    std::string type;
+    std::string name;
+    std::string status;
+    std::string owner;
+    std::string priority;
+    std::string verificationMethod;
+    std::string safetyLevel;
+    int version = 0;
+    std::vector<std::string> incomingLinks;  // "relation: sourceExternalId"
+    std::vector<std::string> outgoingLinks;  // "relation: targetExternalId"
+};
+
 // Assembles all four view models from the current graph in one pass. The
 // models are mutually consistent: matrix rows == coverage items == number of
 // requirements; graph nodes == all active entities.
@@ -41,6 +66,20 @@ public:
     // Builds the impact view model for one entity (the path the ImpactView
     // uses when a user selects a node).
     common::Result<ImpactViewModel> impact(EntityType type,
+                                            const std::string& id);
+
+    // Builds the full left-nav project tree: every root entity (no parent)
+    // with its ordered nested children (recursive). Roots ordered by sortOrder
+    // then id. A node's children come from the parent/child hierarchy
+    // (setParent) AND from Active links that point at the node (source ->
+    // target), so cross-type nesting (design/test under a requirement) is
+    // represented. Every active entity appears exactly once.
+    common::Result<std::vector<ProjectTreeNode>> projectTree();
+
+    // Builds the right-side detail/properties panel for one entity, including
+    // its Active incoming/outgoing links. Fails cleanly if the entity is
+    // missing.
+    common::Result<DetailPanelModel> detail(EntityType type,
                                             const std::string& id);
 
 private:
