@@ -34,10 +34,10 @@ coverage wiring, user roles/permissions+concurrent editing.
 | 4 | Roles/permissions + concurrency | User roles + permissions (RBAC) on entities/links; concurrent-edit safety (optimistic locking/version check); migration 016 | Med | DONE | senior-engineer-wp4 | wp4_rbac_tests | 1297129 |
 | 5 | TestForge coverage wiring | Wire TestForge test runs into live coverage (coverage reflects executed results) | Med | DONE | senior-engineer-wp5 | wp5_coverage_tests | fdb42a9 |
 | 6 | Qt UI shell | Left-nav project tree + right-side detail/properties panel; enable LODESTAR_BUILD_UI=ON with Qt 6.8.2 | Med | DONE | senior-engineer-wp6 | wp6_ui_tests | ae79d3d |
-| 7 | Coverage dashboard + charts | Live coverage dashboard (red/green gaps) + status/priority/coverage charts | High | TODO | - | - | - |
-| 8 | Interactive traceability matrix | Search, filter, saved views, relationship toggling, export | Med | TODO | - | - | - |
-| 9 | Baseline visual diff + rollback | Visual compare view + per-item rollback UI | Med | TODO | - | - | - |
-| 10 | Document-style authoring | Author requirements in a document context with atomic traceability | Med | TODO | - | - | - |
+| 7 | Coverage dashboard + charts | Live coverage dashboard (red/green gaps) + status/priority/coverage charts | High | DONE | senior-engineer-wp7 | wp7_dashboard_tests | e2bb3ef |
+| 8 | Interactive traceability matrix | Search, filter, saved views, relationship toggling, export | Med | DONE | senior-engineer-wp8 | wp8_matrix_tests | 265f7a6 |
+| 9 | Baseline visual diff + rollback | Visual compare view + per-item rollback UI | Med | DONE | senior-engineer-wp9 | wp9_diff_tests | 88d8bf1 |
+| 10 | Document-style authoring | Author requirements in a document context with atomic traceability | Med | DONE | senior-engineer-wp10 | wp10_doc_tests | d54c38b |
 
 ## Dependency order
 - **Engine WPs 1-4 are independent** — run in parallel first.
