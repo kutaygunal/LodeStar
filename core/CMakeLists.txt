@@ -565,4 +565,18 @@ if(LODESTAR_BUILD_TESTS)
     if(WIN32)
         target_link_libraries(lodestar_s1_phase3_tests PRIVATE ws2_32)
     endif()
+
+    # --- S1 Phase 5: real-time / determinism validation (benchmarks) ----------
+    # Test contract: docs/s1-phase5-test.md (written by scrum-master).
+    # Times a core TraceGraph query with a monotonic clock, records min/avg/max
+    # microseconds to docs/reports/s1-phase5-benchmarks.md, and verifies
+    # determinism (same input -> byte-identical output).
+    add_executable(lodestar_s1_phase5_tests
+        test/s1_phase5_tests.cpp)
+    target_link_libraries(lodestar_s1_phase5_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_s1_phase5_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
