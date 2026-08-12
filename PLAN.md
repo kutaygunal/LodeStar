@@ -9,7 +9,7 @@ baseband first slices — all real code, all tested). **Sprint 3 makes the
 broad parts credible**: real CI, real coverage instrumentation, a real
 multi-user web/data path, and a review process with a human in the loop.
 
-Status: **NOT STARTED**
+Status: **IN PROGRESS** — Phase 1 (CI/build reconciliation) and Phase 2 (CTest wiring) DONE.
 Context: Lodestar C++17 CMake monorepo (MSVC/Windows, vcpkg `x64-windows`).
 Build: `cmake --build build --config Release`. Self-verify:
 `./build/core/Release/lodestar_smoke.exe`. TraceLink, ScenarioForge, and
@@ -21,8 +21,8 @@ them.
 
 | # | Work item | Area | Priority | Effort |
 |---|-----------|------|----------|--------|
-| S3.1 | Reconcile CI with the actual build platform; get one pipeline run genuinely green | Platform/CI | P0 | 1–2 wks |
-| S3.2 | Wire the 21 phase-test suites into CTest with pass/fail + JUnit/XML output | Platform/CI | P0 | ~1 wk |
+| S3.1 | Reconcile CI with the actual build platform; get one pipeline run genuinely green | Platform/CI | P0 | **DONE** (code) |
+| S3.2 | Wire the 21 phase-test suites into CTest with pass/fail + JUnit/XML output | Platform/CI | P0 | **DONE** |
 | S3.3 | Real structural code coverage (compiler instrumentation, not a stored percentage) | TestForge | P0 | 6–10 wks |
 | S3.4 | Production-grade certification exports (templated, multi-page, evidence-embedded PDF/Word/ReQIF) | AssureCheck | P0 | 4–6 wks |
 | S3.5 | Human review gate on every merged phase (process change, see Working rules) | Process | P0 | immediate |
@@ -39,8 +39,8 @@ them.
 
 ## Phase breakdown
 
-- **Phase 1 — CI/build reconciliation (S3.1).** `ci/Jenkinsfile` currently runs `sh` steps against a project that only builds via MSVC/vcpkg on Windows — it has never actually gone green. Either retarget it to call `ci/run_all_tests.ps1` on a Windows agent, or add a genuine cross-platform (Linux+CMake) build leg and fix whichever is intended to be canonical. Definition of done: one real CI run, visible pass/fail, not a claim.
-- **Phase 2 — CTest wiring (S3.2).** Register all 21 `*_tests` targets with `add_test()`; emit JUnit/XML so pass rate is visible over time and in an IDE, not just via a shell script grepping exit codes.
+- **Phase 1 — CI/build reconciliation (S3.1). DONE (code).** `ci/Jenkinsfile` now runs `bat` steps on a Windows agent and configures via the new `windows` CMake preset (`CMakePresets.json`), which reads the vcpkg toolchain from `$env:VCPKG_ROOT` instead of a hardcoded personal path. Verified locally: `cmake --preset windows` configures cleanly into a fresh build dir. **Not yet verified**: an actual green run on a real Jenkins Windows agent — no Jenkins instance was available to this session, so this is code-complete but pipeline-unverified. Next person with Jenkins access should confirm.
+- **Phase 2 — CTest wiring (S3.2). DONE.** All 52 `lodestar_*_tests` targets are registered with `add_test()` (name-pattern discovery, not hand-listed) and `enable_testing()` is called at the top level so `ctest --test-dir build -C Release` finds them from the build root. `--output-junit` confirmed working. The Jenkinsfile's test-gate stage now runs `ctest` instead of the old exe-grepping script. **Found in the process**: `lodestar_s1_phase4_tests` failed once in a full 52-test run but passed standalone and on repeat full runs — looks like Windows file-handle contention on its fixed-name SQLite fixture files (`lodestar_s1p4_*.db`), not a real regression. Not root-caused yet; tracked below, not silently retried away.
 - **Phase 3 — Real structural coverage (S3.3).** Replace the stored-percentage model (`core/testforge/Coverage.h`, migration 026) with actual compiler-instrumented coverage (source-based coverage via MSVC/LLVM instrumentation, or integration with an external engine) for statement/decision first, MC/DC next.
 - **Phase 4 — Certification-grade exports (S3.4).** Move `CertReportService` from single-page/basic-XML output to templated, multi-page, evidence-embedded PDF/Word/ReQIF suitable for an actual audit package.
 - **Phase 5 — Human review gate (S3.5).** No code phase — a process change: every phase's diff gets a named human reviewer before it merges to `main`. Record the reviewer in the commit trailer.
@@ -62,6 +62,11 @@ them.
 - Coverage numbers come from instrumentation, not a stored field.
 - The web layer supports at least one real concurrent multi-user edit flow.
 - P2 items (11–15) tracked but may roll into Sprint 4 if capacity is tight; Phase 15 (pilot) should start in parallel regardless of engineering capacity — it does not block on the others.
+
+## Known issues found during Sprint 3
+
+- **Intermittent `lodestar_s1_phase4_tests` failure under CTest.** Failed once in a full 52-test serial run, passed standalone and on two subsequent full runs. Suspect: the test's fixed-name SQLite fixture files (`lodestar_s1p4_roundtrip.db` etc., written relative to CWD with no unique-per-run naming) collide or hit a transient Windows file-lock (e.g. Defender scanning a just-created `.db`) when run back-to-back with other tests that touch similarly-named files. Give these fixtures unique temp names (e.g. include the PID or a UUID) rather than fixed filenames — several other test files share this pattern and are worth auditing at the same time.
+- **`ci/Jenkinsfile` is code-complete but pipeline-unverified.** Fixed to run on Windows and use the `windows` CMake preset; every command it runs was verified directly in this session. Not yet run through an actual Jenkins Windows agent — do that before calling S3.1 fully done, not just "done in code."
 
 ## Working rules
 
