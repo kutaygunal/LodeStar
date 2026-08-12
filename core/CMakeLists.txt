@@ -27,6 +27,7 @@ target_compile_definitions(lodestar_persistence PRIVATE
 # --- tracelink: graph model backed by persistence --------------------------
 lodestar_add_module(lodestar_tracelink
     tracelink/TraceGraph.cpp
+    tracelink/GraphEngine.cpp
     tracelink/Types.cpp
     tracelink/StateMachine.cpp
     tracelink/TraceLinkService.cpp)
@@ -147,5 +148,14 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_tracelink)
     target_compile_definitions(lodestar_wp1_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    add_executable(lodestar_wp2_tests
+        test/wp2_graph_engine_tests.cpp)
+    target_link_libraries(lodestar_wp2_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp2_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
