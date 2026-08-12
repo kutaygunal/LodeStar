@@ -9,7 +9,7 @@ baseband first slices — all real code, all tested). **Sprint 3 makes the
 broad parts credible**: real CI, real coverage instrumentation, a real
 multi-user web/data path, and a review process with a human in the loop.
 
-Status: **IN PROGRESS** — Phase 1 (CI/build reconciliation) and Phase 2 (CTest wiring) DONE.
+Status: **IN PROGRESS** — Phase 1 (CI/build reconciliation), Phase 2 (CTest wiring), and Phase 3 (real statement coverage) DONE. Phase 4 (certification-grade exports) is scoped below and ready to start.
 Context: Lodestar C++17 CMake monorepo (MSVC/Windows, vcpkg `x64-windows`).
 Build: `cmake --build build --config Release`. Self-verify:
 `./build/core/Release/lodestar_smoke.exe`. TraceLink, ScenarioForge, and
@@ -47,7 +47,7 @@ them.
   1. **Cross-binary aggregation.** With `--cover_children`, the same source file appears once per test binary (a shared header can show up 40+ times in one report). The importer originally let later binaries silently overwrite earlier ones; fixed to union hit-status per line number across all occurrences instead. A fixture-based regression test (`core/test/s3_phase3_tests.cpp`) with two packages touching the same file locks this in.
   2. **CTest's `--timeout` CLI flag doesn't override an explicit per-test `TIMEOUT` property** — verified empirically (Phase 2 set `TIMEOUT 120` on every test; passing `ctest --timeout 600` still killed tests at 120.0Xs). Fixed by making the timeout a CMake cache variable (`LODESTAR_TEST_TIMEOUT_SECS`, default 120) that `ci/run_coverage.ps1` overrides to 900 at configure time in its own build tree, leaving the normal CI gate's tight 120s hang-detection untouched. Even at 900s, two binaries still couldn't complete under instrumentation and are excluded from the coverage run specifically (full evidence and rationale in the script): `lodestar_wp8_tests` (a 10k-entity/50k-link bulk-load test still hadn't finished at 900s — real overhead of per-line breakpoint-trap instrumentation on a 60k-iteration loop, a documented OpenCppCoverage characteristic) and `lodestar_wp5_assurecheck_tests` (has a hardcoded internal 60,000ms *wall-clock* budget assertion — `core/test/wp5_assurecheck_tests.cpp:360` — that measuring real-world speed makes fail under any instrumentation by design, not by any timeout setting). Both still run at full scale in the normal, non-coverage CI test gate; excluding them from the coverage pass only affects which lines get measured, and the report correctly shows their bulk-scale-only lines as unmeasured rather than fabricating them as covered.
   **Not done**: decision and MC/DC coverage. OpenCppCoverage 0.9.9 (the only coverage tool installed) is statement/line-only — verified via `--help`, no branch/decision flag exists. VS Community's bundled LLVM only ships `clang-tidy`/`clang-format`, not `clang-cl`/`llvm-cov`. Getting real decision/MC-DC would need installing additional tooling (clang-cl + llvm-cov, or a commercial engine) — a deliberate scope boundary for this pass, not silently dropped: `decisions_total`/`conditions_total` are left at 0 (honest "not measured") rather than fabricated.
-- **Phase 4 — Certification-grade exports (S3.4).** Move `CertReportService` from single-page/basic-XML output to templated, multi-page, evidence-embedded PDF/Word/ReQIF suitable for an actual audit package.
+- **Phase 4 — Certification-grade exports (S3.4).** Move `CertReportService` from single-page/basic-XML output to templated, multi-page, evidence-embedded PDF/Word/ReQIF suitable for an actual audit package. **Full scope brief below — start here.**
 - **Phase 5 — Human review gate (S3.5).** No code phase — a process change: every phase's diff gets a named human reviewer before it merges to `main`. Record the reviewer in the commit trailer.
 - **Phase 6 — Web collaboration layer (S3.6).** Replace the read-only server-rendered `WebServer` pages with a real JS frontend: editing, not just viewing; live updates for concurrent viewers.
 - **Phase 7 — Client-server persistence (S3.7).** Give the web/collaborative deployment mode a real multi-client data path (connection-pooled server DB) instead of a single local SQLite file; keep SQLite for the single-user desktop mode.
@@ -59,6 +59,109 @@ them.
 - **Phase 13 — Static analysis (S3.13).** Add clang-tidy and an ASan/UBSan debug CI leg, appropriate given the product's own DO-178C-adjacent audience.
 - **Phase 14 — Installer lifecycle (S3.14).** Crash reporting, basic telemetry (opt-in), and an update mechanism for the packaged installer.
 - **Phase 15 — Pilot (S3.15).** Get one real IT&V lead or avionics engineer to run the actual workflow end-to-end and report back. Non-engineering, but nothing above matters commercially until this happens once.
+
+## Phase 4 scope brief — certification-grade exports (S3.4)
+
+Self-contained brief for whoever/whatever picks up Phase 4. Written against
+the actual current code (not aspirational) — every gap below was verified by
+reading `core/assurecheck/CertReportService.cpp` (337 lines) and
+`core/test/s2_phase8_tests.cpp` (275 lines) directly, this session.
+
+**Objective.** `CertReportService` (`core/assurecheck/CertReportService.{h,cpp}`)
+exports a `ComplianceReport` (see `core/assurecheck/ReportService.h`) as PDF,
+Word (docx), and ReQIF, plus resolves result→requirement traceability. All
+three exports currently produce *valid-format but minimal* output — they
+pass their own tests (which only assert "non-empty bytes" / substring
+presence) but would not hold up as real certification evidence. Phase 4 is
+the depth pass: make the same three exports genuinely audit-ready.
+
+**Exactly what's thin today, file:line-grounded:**
+
+1. **PDF (`buildPdf`, CertReportService.cpp:52-89).** Single page, Helvetica
+   only. The entire multi-line report body is passed to *one* `Tj` (show
+   text) operator — PDF doesn't interpret embedded `\n` as a line break, so
+   this likely renders as a single garbled line, not multiple lines. No
+   page breaks, no title/header styling, no table layout for the
+   pass/fail rows, no page numbers.
+2. **Word (`exportWord`, CertReportService.cpp:253-297).** The docx zip is
+   missing parts a real `.docx` normally has: `docProps/core.xml`,
+   `docProps/app.xml`, `word/styles.xml`, `word/settings.xml`,
+   `word/fontTable.xml`, and `_rels/.rels` doesn't reference `docProps/`.
+   Worth checking early whether the current output even opens cleanly in
+   real Word/LibreOffice — that's the first useful smoke test for this
+   phase. Content is one plain unstyled paragraph per line; no table, no
+   heading styles, no title page.
+3. **ReQIF (`buildReqif`, CertReportService.cpp:188-223).** `SPEC-OBJECTS`
+   reference `SPEC-OBJECT-TYPE-REF="REQ-TYPE"` and `SPEC-RELATIONS`
+   reference `SPEC-RELATION-TYPE-REF="TRACE-TYPE"`, but neither `REQ-TYPE`
+   nor `TRACE-TYPE` is ever *defined* — there's no `SPEC-TYPES` section at
+   all. A real ReQIF consumer (DOORS, Polarion, Codebeamer) validates
+   against the schema and will very likely reject a file with dangling
+   type refs. Also missing: `DATATYPES`, `SPEC-OBJECT-TYPE` attribute
+   definitions, `TOOL-EXTENSIONS`.
+4. **Evidence is dropped on the floor.** `ReportRow.evidence` (a real,
+   already-populated field — "evidence links summary", see
+   `core/assurecheck/ReportService.h:29`) is **never read** by
+   `reportBody()` (CertReportService.cpp:226-241) or any exporter. The data
+   the export is supposed to be "evidence-embedded" for already exists and
+   is simply not being used.
+5. **No workflow/audit trail in the export.** `WorkflowService`
+   (`core/assurecheck/WorkflowService.h`, built in S2 Phase 3) has a real
+   `AuditEntry` (actor, action, timestamp, from-state, to-state) and
+   `EvidencePackage` (objective → evidence links) — neither is pulled into
+   `CertReportService`. A real certification package needs to show who
+   reviewed/approved each objective and when; right now the export can't
+   answer that at all.
+6. **`traceResultToRequirements(resultId)` doesn't actually take a
+   TestForge result.** (CertReportService.cpp:307-335). Despite the name,
+   it takes a TraceLink `test_case` entity id directly (confirmed by the
+   test itself passing `"tc1"`, a test_case id, as `resultId` —
+   `core/test/s2_phase8_tests.cpp:186`) and just re-runs a query TraceLink
+   can already answer. It never touches an actual TestForge `TestRun`/step
+   result. Decide whether to rename it to match what it does, or make it
+   take a real TestForge run id and resolve through to *passed* results
+   specifically (arguably the more useful traceability question for a cert
+   package: "which requirements does this passing run verify").
+7. **Test coverage matches the shallowness.** The existing S2 Phase 8 tests
+   only assert non-empty bytes / `size() > 100` for PDF and Word, and a
+   substring search for ReQIF. Phase 4 needs real assertions: PDF actually
+   has N pages and the expected text is extractable; Word actually parses
+   as valid OOXML with the expected paragraphs/tables; ReQIF validates
+   against having complete `SPEC-TYPES` and round-trips through a parser
+   (even a hand-rolled one, matching this project's existing
+   `core/testforge/CoberturaImport.cpp` precedent of writing a small
+   targeted parser rather than pulling in a full XML library — same
+   judgment call applies here for ReQIF/OOXML if no library is added).
+
+**A decision this phase should make explicitly, not by default:** whether to
+pull in a real PDF/DOCX-generation library via vcpkg (`vcpkg.json` currently
+has exactly one dependency, `sqlite3` — see project root) or to keep
+hand-rolling the formats as this codebase has consistently done everywhere
+else (SkydelAdapter's HTTP client, the OSLC RDF/XML writer, the Cobertura
+importer). Hand-rolling a *correct* multi-page PDF and a *complete* OOXML
+docx is very doable but is real, fiddly binary-format work; a library
+trades a new dependency for a lot of correctness for free. Either is
+reasonable — pick one and say why, don't default silently into partial work
+on both.
+
+**Suggested order:** (1) fix ReQIF `SPEC-TYPES` first — it's the smallest,
+most clearly "wrong not just thin" gap and unblocks real DOORS/Polarion
+interop testing; (2) wire in `row.evidence` and `WorkflowService`'s audit
+trail — pure data-plumbing, no format work, high value; (3) then the
+PDF/Word depth work, after the library-vs-hand-rolled decision above; (4)
+rewrite the tests to match, verifying real structural properties, not byte
+counts.
+
+**Build/verify** (see also `docs/architecture.md`, `docs/user-guide.md`):
+`cmake -S . -B build -DLODESTAR_BUILD_TESTS=ON`, then
+`cmake --build build --config Release`, then
+`ctest --test-dir build -C Release -R s2_phase8` (existing suite) once
+extended, or add a new `s3_phase4_tests` target following the pattern in
+`core/CMakeLists.txt` (search for `s3_phase3` for the most recent example —
+add the executable, link `lodestar_assurecheck`, it's auto-registered with
+CTest by the name-pattern loop). Windows/MSVC only; follow the working
+rules below (hard build timeouts, one test at a time, no new per-phase doc
+files — status goes in this file).
 
 ## Definition of done (Sprint 3)
 
