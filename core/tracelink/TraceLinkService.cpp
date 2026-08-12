@@ -8,7 +8,12 @@
 
 #include "core/tracelink/TraceLinkService.h"
 
+#include <algorithm>
+#include <cctype>
 #include <ctime>
+#include <functional>
+#include <map>
+#include <set>
 #include <tuple>
 #include <vector>
 
@@ -47,6 +52,14 @@ std::string now() {
     const auto t = std::time(nullptr);
     std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%SZ", std::gmtime(&t));
     return buf;
+}
+
+// WP-F (B3): true when the string is empty or contains only whitespace.
+bool isBlank(const std::string& s) {
+    for (char c : s) {
+        if (!std::isspace(static_cast<unsigned char>(c))) return false;
+    }
+    return true;
 }
 
 std::string defaultExternalId(EntityType type) {
@@ -119,6 +132,7 @@ InterfaceDef toIface(const Entity& e) {
     i.id = e.id; i.externalId = e.externalId; i.name = e.name; i.description = e.text;
     i.status = e.status; i.direction = e.direction; i.sourceEntity = e.sourceEntity;
     i.targetEntity = e.targetEntity; i.dataItems = e.dataItems; i.protocol = e.protocol;
+    i.parentId = e.parentId; i.sortOrder = e.sortOrder;
     i.tags = e.tags; i.version = e.version; i.createdBy = e.createdBy;
     i.createdAt = e.createdAt; i.updatedBy = e.updatedBy; i.updatedAt = e.updatedAt;
     return i;
@@ -129,6 +143,7 @@ Entity fromIface(const InterfaceDef& i) {
     e.name = i.name; e.text = i.description; e.status = i.status;
     e.direction = i.direction; e.sourceEntity = i.sourceEntity;
     e.targetEntity = i.targetEntity; e.dataItems = i.dataItems; e.protocol = i.protocol;
+    e.parentId = i.parentId; e.sortOrder = i.sortOrder;
     e.tags = i.tags; e.version = i.version; e.createdBy = i.createdBy;
     e.createdAt = i.createdAt; e.updatedBy = i.updatedBy; e.updatedAt = i.updatedAt;
     return e;
@@ -137,7 +152,9 @@ TestCase toTc(const Entity& e) {
     TestCase t;
     t.id = e.id; t.externalId = e.externalId; t.name = e.name; t.description = e.text;
     t.status = e.status; t.verificationMethod = e.verificationMethod;
-    t.resultStatus = e.resultStatus; t.priority = e.priority; t.tags = e.tags;
+    t.resultStatus = e.resultStatus; t.priority = e.priority;
+    t.parentId = e.parentId; t.sortOrder = e.sortOrder;
+    t.tags = e.tags;
     t.version = e.version; t.createdBy = e.createdBy; t.createdAt = e.createdAt;
     t.updatedBy = e.updatedBy; t.updatedAt = e.updatedAt;
     return t;
@@ -147,7 +164,8 @@ Entity fromTc(const TestCase& t) {
     e.type = EntityType::TestCase; e.id = t.id; e.externalId = t.externalId;
     e.name = t.name; e.text = t.description; e.status = t.status;
     e.verificationMethod = t.verificationMethod; e.resultStatus = t.resultStatus;
-    e.priority = t.priority; e.tags = t.tags; e.version = t.version;
+    e.priority = t.priority; e.parentId = t.parentId; e.sortOrder = t.sortOrder;
+    e.tags = t.tags; e.version = t.version;
     e.createdBy = t.createdBy; e.createdAt = t.createdAt; e.updatedBy = t.updatedBy;
     e.updatedAt = t.updatedAt;
     return e;
@@ -156,7 +174,8 @@ Hazard toHazard(const Entity& e) {
     Hazard h;
     h.id = e.id; h.externalId = e.externalId; h.name = e.name; h.description = e.text;
     h.status = e.status; h.severity = e.severity; h.likelihood = e.likelihood;
-    h.owner = e.owner; h.tags = e.tags; h.version = e.version;
+    h.owner = e.owner; h.parentId = e.parentId; h.sortOrder = e.sortOrder;
+    h.tags = e.tags; h.version = e.version;
     h.createdBy = e.createdBy; h.createdAt = e.createdAt; h.updatedBy = e.updatedBy;
     h.updatedAt = e.updatedAt;
     return h;
@@ -166,6 +185,7 @@ Entity fromHazard(const Hazard& h) {
     e.type = EntityType::Hazard; e.id = h.id; e.externalId = h.externalId;
     e.name = h.name; e.text = h.description; e.status = h.status;
     e.severity = h.severity; e.likelihood = h.likelihood; e.owner = h.owner;
+    e.parentId = h.parentId; e.sortOrder = h.sortOrder;
     e.tags = h.tags; e.version = h.version; e.createdBy = h.createdBy;
     e.createdAt = h.createdAt; e.updatedBy = h.updatedBy; e.updatedAt = h.updatedAt;
     return e;
@@ -174,6 +194,7 @@ Decision toDecision(const Entity& e) {
     Decision d;
     d.id = e.id; d.externalId = e.externalId; d.name = e.name; d.description = e.text;
     d.status = e.status; d.rationale = e.rationale; d.owner = e.owner; d.date = e.date;
+    d.parentId = e.parentId; d.sortOrder = e.sortOrder;
     d.tags = e.tags; d.version = e.version; d.createdBy = e.createdBy;
     d.createdAt = e.createdAt; d.updatedBy = e.updatedBy; d.updatedAt = e.updatedAt;
     return d;
@@ -182,23 +203,26 @@ Entity fromDecision(const Decision& d) {
     Entity e;
     e.type = EntityType::Decision; e.id = d.id; e.externalId = d.externalId;
     e.name = d.name; e.text = d.description; e.status = d.status;
-    e.rationale = d.rationale; e.owner = d.owner; e.date = d.date; e.tags = d.tags;
-    e.version = d.version; e.createdBy = d.createdBy; e.createdAt = d.createdAt;
-    e.updatedBy = d.updatedBy; e.updatedAt = d.updatedAt;
+    e.rationale = d.rationale; e.owner = d.owner; e.date = d.date;
+    e.parentId = d.parentId; e.sortOrder = d.sortOrder;
+    e.tags = d.tags; e.version = d.version; e.createdBy = d.createdBy;
+    e.createdAt = d.createdAt; e.updatedBy = d.updatedBy; e.updatedAt = d.updatedAt;
     return e;
 }
 Assumption toAssumption(const Entity& e) {
     Assumption a;
     a.id = e.id; a.externalId = e.externalId; a.name = e.name; a.description = e.text;
-    a.status = e.status; a.owner = e.owner; a.tags = e.tags; a.version = e.version;
-    a.createdBy = e.createdBy; a.createdAt = e.createdAt; a.updatedBy = e.updatedBy;
-    a.updatedAt = e.updatedAt;
+    a.status = e.status; a.owner = e.owner; a.parentId = e.parentId;
+    a.sortOrder = e.sortOrder;
+    a.tags = e.tags; a.version = e.version; a.createdBy = e.createdBy;
+    a.createdAt = e.createdAt; a.updatedBy = e.updatedBy; a.updatedAt = e.updatedAt;
     return a;
 }
 Entity fromAssumption(const Assumption& a) {
     Entity e;
     e.type = EntityType::Assumption; e.id = a.id; e.externalId = a.externalId;
     e.name = a.name; e.text = a.description; e.status = a.status; e.owner = a.owner;
+    e.parentId = a.parentId; e.sortOrder = a.sortOrder;
     e.tags = a.tags; e.version = a.version; e.createdBy = a.createdBy;
     e.createdAt = a.createdAt; e.updatedBy = a.updatedBy; e.updatedAt = a.updatedAt;
     return e;
@@ -334,12 +358,30 @@ common::Result<void> TraceLinkService::writeAudit(
 // ---------------------------------------------------------------------------
 common::Result<Entity> TraceLinkService::addEntity(const Entity& input) {
     Entity e = input;
+    // WP-F (B3): input validation & size limits before any auto-generation.
+    if (isBlank(e.externalId)) {
+        return common::Result<Entity>::err(common::ErrorCode::InvalidArgument,
+                                           "external id is required");
+    }
+    if (isBlank(e.name)) {
+        return common::Result<Entity>::err(common::ErrorCode::InvalidArgument,
+                                           "name is required");
+    }
+    if (e.name.size() > 256) {
+        return common::Result<Entity>::err(common::ErrorCode::LimitExceeded,
+                                           "name exceeds 256 characters");
+    }
+    if (e.text.size() > 65536) {
+        return common::Result<Entity>::err(common::ErrorCode::LimitExceeded,
+                                           "text exceeds 65536 characters");
+    }
     if (e.id.empty()) e.id = newUuid();
     if (e.externalId.empty()) e.externalId = defaultExternalId(e.type);
     if (e.status.empty()) e.status = statuses(e.type).front();
     if (!isValidStatus(e.type, e.status)) {
-        return common::Result<Entity>::err("invalid status '" + e.status +
-                                           "' for type '" + toString(e.type) + "'");
+        return common::Result<Entity>::err(common::ErrorCode::InvalidArgument,
+                                           "invalid status '" + e.status +
+                                               "' for type '" + toString(e.type) + "'");
     }
     // External id must be unique per type.
     auto dup = dispatchGet(e.type, "");
@@ -383,8 +425,9 @@ common::Result<Entity> TraceLinkService::addEntity(const Entity& input) {
         }
     }
     if (extTaken) {
-        return common::Result<Entity>::err("duplicate external id '" + e.externalId +
-                                           "' for type '" + toString(e.type) + "'");
+        return common::Result<Entity>::err(common::ErrorCode::Duplicate,
+                                           "duplicate external id '" + e.externalId +
+                                               "' for type '" + toString(e.type) + "'");
     }
     e.version = 1;
     if (e.createdAt.empty()) e.createdAt = now();
@@ -506,6 +549,12 @@ common::Result<std::optional<Entity>> TraceLinkService::getEntity(EntityType typ
 
 common::Result<std::vector<Entity>> TraceLinkService::listEntities(
     EntityType type, const EntityFilter& filter) {
+    // WP-F (B3): reject negative pagination values.
+    if (filter.limit < 0 || filter.offset < 0) {
+        return common::Result<std::vector<Entity>>::err(
+            common::ErrorCode::InvalidArgument,
+            "limit and offset must be non-negative");
+    }
     persistence::EntityFilter pf = toPersist(filter);
     switch (type) {
         case EntityType::Requirement: {
@@ -569,21 +618,158 @@ common::Result<std::vector<Entity>> TraceLinkService::search(EntityType type,
 }
 
 // ---------------------------------------------------------------------------
+// WP-A: FTS5 ranked full-text search
+// ---------------------------------------------------------------------------
+namespace {
+// Escapes a plain user term so it can be used as a literal FTS5 phrase. Any
+// embedded double-quote is doubled (FTS5's escape rule) and the whole input is
+// wrapped in quotes so it is treated as a single phrase rather than operator
+// syntax.
+std::string ftsEscape(const std::string& text) {
+    std::string out;
+    out.reserve(text.size() + 2);
+    out.push_back('"');
+    for (char c : text) {
+        if (c == '"') out += "\"\"";
+        else out.push_back(c);
+    }
+    out.push_back('"');
+    return out;
+}
+}  // namespace
+
+common::Result<void> TraceLinkService::rebuildSearchIndex() {
+    if (!db_.isOpen()) return common::Result<void>::err("database not open");
+    sqlite3* db = db_.handle();
+    auto clear = db_.execute("DELETE FROM entity_fts;");
+    if (clear.failed()) return common::Result<void>::err(clear.error());
+
+    auto reqs = reqDao_.findAll();
+    if (reqs.failed()) return common::Result<void>::err(reqs.error());
+    for (const auto& r : reqs.value()) {
+        auto ins = execBind(db,
+            "INSERT INTO entity_fts (type, external_id, name, body) VALUES (?,?,?,?);",
+            {"requirement", r.externalId, r.name, r.description});
+        if (ins.failed()) return ins;
+    }
+    auto designs = designDao_.findAll();
+    if (designs.failed()) return common::Result<void>::err(designs.error());
+    for (const auto& d : designs.value()) {
+        auto ins = execBind(db,
+            "INSERT INTO entity_fts (type, external_id, name, body) VALUES (?,?,?,?);",
+            {"design", d.externalId, d.name, d.description});
+        if (ins.failed()) return ins;
+    }
+    auto ifaces = ifaceDao_.findAll();
+    if (ifaces.failed()) return common::Result<void>::err(ifaces.error());
+    for (const auto& i : ifaces.value()) {
+        auto ins = execBind(db,
+            "INSERT INTO entity_fts (type, external_id, name, body) VALUES (?,?,?,?);",
+            {"interface", i.externalId, i.name, i.description});
+        if (ins.failed()) return ins;
+    }
+    auto tcs = testDao_.findAll();
+    if (tcs.failed()) return common::Result<void>::err(tcs.error());
+    for (const auto& t : tcs.value()) {
+        auto ins = execBind(db,
+            "INSERT INTO entity_fts (type, external_id, name, body) VALUES (?,?,?,?);",
+            {"test_case", t.externalId, t.name, t.description});
+        if (ins.failed()) return ins;
+    }
+    auto hazards = hazardDao_.findAll();
+    if (hazards.failed()) return common::Result<void>::err(hazards.error());
+    for (const auto& h : hazards.value()) {
+        auto ins = execBind(db,
+            "INSERT INTO entity_fts (type, external_id, name, body) VALUES (?,?,?,?);",
+            {"hazard", h.externalId, h.name, h.description});
+        if (ins.failed()) return ins;
+    }
+    auto decisions = decisionDao_.findAll();
+    if (decisions.failed()) return common::Result<void>::err(decisions.error());
+    for (const auto& d : decisions.value()) {
+        auto ins = execBind(db,
+            "INSERT INTO entity_fts (type, external_id, name, body) VALUES (?,?,?,?);",
+            {"decision", d.externalId, d.name, d.description});
+        if (ins.failed()) return ins;
+    }
+    auto assumptions = assumptionDao_.findAll();
+    if (assumptions.failed()) return common::Result<void>::err(assumptions.error());
+    for (const auto& a : assumptions.value()) {
+        auto ins = execBind(db,
+            "INSERT INTO entity_fts (type, external_id, name, body) VALUES (?,?,?,?);",
+            {"assumption", a.externalId, a.name, a.description});
+        if (ins.failed()) return ins;
+    }
+    return common::Result<void>::ok();
+}
+
+common::Result<std::vector<SearchHit>> TraceLinkService::searchRanked(
+    EntityType type, const std::string& text, int limit, int offset) {
+    if (!db_.isOpen()) {
+        return common::Result<std::vector<SearchHit>>::err("database not open");
+    }
+    if (text.empty()) {
+        return common::Result<std::vector<SearchHit>>::ok({});
+    }
+    sqlite3* db = db_.handle();
+    std::string match = ftsEscape(text);
+    // bm25 weights: type/external_id neutral, name weighted HIGHER than body
+    // (a larger positive weight lowers the score more), so a name match always
+    // outranks a body-only match for the same term. Lower bm25 = better match.
+    std::string sql =
+        "SELECT type, external_id, name, bm25(entity_fts, 0.0, 0.0, 1.0, 0.0) AS rank "
+        "FROM entity_fts WHERE entity_fts MATCH ? AND type = ? ORDER BY rank ASC";
+    if (limit > 0) {
+        sql += " LIMIT " + std::to_string(limit);
+        if (offset > 0) sql += " OFFSET " + std::to_string(offset);
+    }
+    sql += ";";
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        return common::Result<std::vector<SearchHit>>::err(
+            "prepare failed: " + std::string(sqlite3_errmsg(db)));
+    }
+    sqlite3_bind_text(stmt, 1, match.c_str(), static_cast<int>(match.size()),
+                      SQLITE_TRANSIENT);
+    std::string typeStr = toString(type);
+    sqlite3_bind_text(stmt, 2, typeStr.c_str(), static_cast<int>(typeStr.size()),
+                      SQLITE_TRANSIENT);
+    std::vector<SearchHit> out;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        SearchHit hit;
+        hit.type = type;
+        const unsigned char* ext = sqlite3_column_text(stmt, 1);
+        hit.externalId = ext ? reinterpret_cast<const char*>(ext) : "";
+        const unsigned char* nm = sqlite3_column_text(stmt, 2);
+        hit.name = nm ? reinterpret_cast<const char*>(nm) : "";
+        hit.rank = sqlite3_column_double(stmt, 3);
+        out.push_back(std::move(hit));
+    }
+    sqlite3_finalize(stmt);
+    return common::Result<std::vector<SearchHit>>::ok(std::move(out));
+}
+
+// ---------------------------------------------------------------------------
 // Links
 // ---------------------------------------------------------------------------
 common::Result<Link> TraceLinkService::addLink(const Link& link) {
     auto relOpt = relationFromString(link.relation);
-    if (!relOpt) return common::Result<Link>::err("invalid relation: " + link.relation);
+    if (!relOpt) {
+        return common::Result<Link>::err(common::ErrorCode::InvalidArgument,
+                                         "invalid relation: " + link.relation);
+    }
 
     if (!nodeExists(link.sourceType, link.sourceId)) {
-        return common::Result<Link>::err("dangling link: source '" +
-                                         toString(link.sourceType) + ":" + link.sourceId +
-                                         "' does not exist");
+        return common::Result<Link>::err(common::ErrorCode::IntegrityViolation,
+                                         "dangling link: source '" +
+                                             toString(link.sourceType) + ":" +
+                                             link.sourceId + "' does not exist");
     }
     if (!nodeExists(link.targetType, link.targetId)) {
-        return common::Result<Link>::err("dangling link: target '" +
-                                         toString(link.targetType) + ":" + link.targetId +
-                                         "' does not exist");
+        return common::Result<Link>::err(common::ErrorCode::IntegrityViolation,
+                                         "dangling link: target '" +
+                                             toString(link.targetType) + ":" +
+                                             link.targetId + "' does not exist");
     }
     if (link.sourceType == link.targetType && link.sourceId == link.targetId) {
         return common::Result<Link>::err("self-loop links are not allowed");
@@ -732,7 +918,8 @@ common::Result<void> TraceLinkService::transition(EntityType type, const std::st
     Entity e = *existingRes.value();
     const std::string oldStatus = e.status;
     if (!canTransition(type, e.status, to)) {
-        return common::Result<void>::err(transitionError(type, e.status, to));
+        return common::Result<void>::err(common::ErrorCode::IllegalTransition,
+                                         transitionError(type, e.status, to));
     }
     e.status = to;
     e.version = e.version + 1;
@@ -754,6 +941,253 @@ common::Result<void> TraceLinkService::transition(EntityType type, const std::st
         return common::Result<void>::err(commit.error());
     }
     return common::Result<void>::ok();
+}
+
+// ---------------------------------------------------------------------------
+// Hierarchy tree (WP-C / A2)
+// ---------------------------------------------------------------------------
+namespace {
+
+// Orders a list of sibling entities by sortOrder then id.
+void sortSiblings(std::vector<Entity>& v) {
+    std::sort(v.begin(), v.end(), [](const Entity& a, const Entity& b) {
+        if (a.sortOrder != b.sortOrder) return a.sortOrder < b.sortOrder;
+        return a.id < b.id;
+    });
+}
+
+}  // namespace
+
+common::Result<void> TraceLinkService::setParent(EntityType type,
+                                                 const std::string& id,
+                                                 const std::string& parentId) {
+    auto selfRes = dispatchGet(type, id);
+    if (selfRes.failed()) return common::Result<void>::err(selfRes.error());
+    if (!selfRes.value()) {
+        return common::Result<void>::err(toString(type) + " not found: " + id);
+    }
+    const std::string oldParent = selfRes.value()->parentId;
+
+    if (parentId.empty()) {
+        // Detach: make `id` a root.
+        Entity e = *selfRes.value();
+        e.parentId = "";
+        e.version += 1;
+        e.updatedAt = now();
+        beginTx();
+        auto res = dispatchUpdate(type, e);
+        if (res.failed()) {
+            rollbackTx();
+            return common::Result<void>::err(res.error());
+        }
+        auto audit = writeAudit(toString(type), id, "update", "parentId", oldParent, "");
+        if (audit.failed()) {
+            rollbackTx();
+            return common::Result<void>::err(audit.error());
+        }
+        auto commit = commitTx();
+        if (commit.failed()) {
+            rollbackTx();
+            return common::Result<void>::err(commit.error());
+        }
+        return common::Result<void>::ok();
+    }
+
+    // Parent must exist and be the same entity type.
+    auto parentRes = dispatchGet(type, parentId);
+    if (parentRes.failed()) return common::Result<void>::err(parentRes.error());
+    if (!parentRes.value()) {
+        return common::Result<void>::err(toString(type) + " parent not found: " +
+                                         parentId);
+    }
+
+    // Cycle rejection: parentId must not be `id` or a descendant of `id`.
+    if (parentId == id) {
+        return common::Result<void>::err("cannot set parent to itself");
+    }
+    auto sub = subtree(type, id);
+    if (sub.failed()) return common::Result<void>::err(sub.error());
+    for (const auto& d : sub.value()) {
+        if (d.id == parentId) {
+            return common::Result<void>::err(
+                "cycle: parent is a descendant of the node");
+        }
+    }
+
+    Entity e = *selfRes.value();
+    e.parentId = parentId;
+    e.version += 1;
+    e.updatedAt = now();
+    beginTx();
+    auto res = dispatchUpdate(type, e);
+    if (res.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(res.error());
+    }
+    auto audit = writeAudit(toString(type), id, "update", "parentId", oldParent,
+                            parentId);
+    if (audit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(audit.error());
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(commit.error());
+    }
+    return common::Result<void>::ok();
+}
+
+common::Result<std::vector<Entity>> TraceLinkService::children(
+    EntityType type, const std::string& parentId) {
+    auto all = listEntities(type, EntityFilter{});
+    if (all.failed()) return common::Result<std::vector<Entity>>::err(all.error());
+    std::vector<Entity> out;
+    for (auto& e : all.value()) {
+        if (e.status == "Obsolete") continue;
+        if (e.parentId == parentId) out.push_back(e);
+    }
+    sortSiblings(out);
+    return common::Result<std::vector<Entity>>::ok(std::move(out));
+}
+
+common::Result<std::vector<Entity>> TraceLinkService::subtree(
+    EntityType type, const std::string& id) {
+    auto all = listEntities(type, EntityFilter{});
+    if (all.failed()) return common::Result<std::vector<Entity>>::err(all.error());
+    std::vector<Entity> out;
+    std::function<void(const std::string&)> collect =
+        [&](const std::string& pid) {
+            for (auto& e : all.value()) {
+                if (e.status == "Obsolete") continue;
+                if (e.parentId == pid) {
+                    out.push_back(e);
+                    collect(e.id);
+                }
+            }
+        };
+    collect(id);
+    return common::Result<std::vector<Entity>>::ok(std::move(out));
+}
+
+common::Result<std::vector<Entity>> TraceLinkService::ancestors(
+    EntityType type, const std::string& id) {
+    auto all = listEntities(type, EntityFilter{});
+    if (all.failed()) return common::Result<std::vector<Entity>>::err(all.error());
+    std::map<std::string, Entity> byId;
+    for (auto& e : all.value()) {
+        if (e.status == "Obsolete") continue;
+        byId[e.id] = e;
+    }
+    std::vector<Entity> out;
+    std::string cur = id;
+    while (true) {
+        auto it = byId.find(cur);
+        if (it == byId.end()) break;
+        const std::string& pid = it->second.parentId;
+        if (pid.empty()) break;
+        auto pit = byId.find(pid);
+        if (pit == byId.end()) break;
+        out.push_back(pit->second);
+        cur = pid;
+    }
+    return common::Result<std::vector<Entity>>::ok(std::move(out));
+}
+
+common::Result<void> TraceLinkService::reorder(
+    EntityType type, const std::string& parentId,
+    const std::vector<std::string>& orderedIds) {
+    auto kids = children(type, parentId);
+    if (kids.failed()) return common::Result<void>::err(kids.error());
+    std::set<std::string> childIds;
+    for (const auto& k : kids.value()) childIds.insert(k.id);
+
+    std::set<std::string> seen;
+    for (const auto& id : orderedIds) {
+        if (childIds.find(id) == childIds.end()) {
+            return common::Result<void>::err("reorder: id '" + id +
+                                             "' is not a direct child of parent");
+        }
+        if (!seen.insert(id).second) {
+            return common::Result<void>::err("reorder: duplicate id '" + id + "'");
+        }
+    }
+    if (seen.size() != childIds.size()) {
+        return common::Result<void>::err(
+            "reorder: orderedIds must include every direct child");
+    }
+
+    beginTx();
+    for (size_t i = 0; i < orderedIds.size(); ++i) {
+        auto eRes = dispatchGet(type, orderedIds[i]);
+        if (eRes.failed()) {
+            rollbackTx();
+            return common::Result<void>::err(eRes.error());
+        }
+        Entity e = *eRes.value();
+        const int oldSort = e.sortOrder;
+        e.sortOrder = static_cast<int>(i);
+        e.version += 1;
+        e.updatedAt = now();
+        auto res = dispatchUpdate(type, e);
+        if (res.failed()) {
+            rollbackTx();
+            return common::Result<void>::err(res.error());
+        }
+        auto audit = writeAudit(toString(type), orderedIds[i], "update", "sortOrder",
+                                std::to_string(oldSort), std::to_string(e.sortOrder));
+        if (audit.failed()) {
+            rollbackTx();
+            return common::Result<void>::err(audit.error());
+        }
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(commit.error());
+    }
+    return common::Result<void>::ok();
+}
+
+common::Result<std::vector<Entity>> TraceLinkService::rootNodes(EntityType type) {
+    auto all = listEntities(type, EntityFilter{});
+    if (all.failed()) return common::Result<std::vector<Entity>>::err(all.error());
+    std::vector<Entity> out;
+    for (auto& e : all.value()) {
+        if (e.status == "Obsolete") continue;
+        if (e.parentId.empty()) out.push_back(e);
+    }
+    sortSiblings(out);
+    return common::Result<std::vector<Entity>>::ok(std::move(out));
+}
+
+common::Result<HierarchyNode> TraceLinkService::buildTree(
+    EntityType type, const std::string& rootId) {
+    auto rootRes = dispatchGet(type, rootId);
+    if (rootRes.failed()) return common::Result<HierarchyNode>::err(rootRes.error());
+    if (!rootRes.value()) {
+        return common::Result<HierarchyNode>::err(toString(type) + " not found: " +
+                                                  rootId);
+    }
+    auto all = listEntities(type, EntityFilter{});
+    if (all.failed()) return common::Result<HierarchyNode>::err(all.error());
+    std::map<std::string, std::vector<Entity>> childrenMap;
+    for (auto& e : all.value()) {
+        if (e.status == "Obsolete") continue;
+        childrenMap[e.parentId].push_back(e);
+    }
+    for (auto& kv : childrenMap) sortSiblings(kv.second);
+
+    std::function<HierarchyNode(const Entity&)> build =
+        [&](const Entity& e) {
+            HierarchyNode node;
+            node.entity = e;
+            for (const auto& child : childrenMap[e.id]) {
+                node.children.push_back(build(child));
+            }
+            return node;
+        };
+    return common::Result<HierarchyNode>::ok(build(*rootRes.value()));
 }
 
 // ---------------------------------------------------------------------------

@@ -3,6 +3,8 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <sstream>
@@ -49,6 +51,46 @@ int migrationNumber(const std::string& filename) {
         }
     }
     return any ? value : -1;
+}
+
+// Collects the sorted numeric prefixes of every migration file in migrationsDir.
+std::vector<int> collectMigrationNumbers(const std::string& migrationsDir,
+                                         std::string* errOut) {
+    std::vector<int> nums;
+    std::error_code ec;
+    if (!fs::exists(migrationsDir, ec)) {
+        if (errOut) *errOut = "migrations directory not found: " + migrationsDir;
+        return nums;
+    }
+    for (const auto& entry : fs::directory_iterator(migrationsDir, ec)) {
+        if (!entry.is_regular_file()) continue;
+        int num = migrationNumber(entry.path().filename().string());
+        if (num >= 0) nums.push_back(num);
+    }
+    std::sort(nums.begin(), nums.end());
+    // Multiple files may share a numeric prefix (e.g. two 010_* files from
+    // parallel work packages); treat them as one schema version for safety
+    // checks so the applied set and the file set compare equal.
+    nums.erase(std::unique(nums.begin(), nums.end()), nums.end());
+    return nums;
+}
+
+// Reads the sorted set of applied migration versions from schema_version.
+std::vector<int> appliedVersions(sqlite3* db) {
+    std::vector<int> applied;
+    if (db == nullptr) return applied;
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, "SELECT version FROM schema_version;", -1, &stmt,
+                           nullptr) != SQLITE_OK) {
+        return applied;
+    }
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        applied.push_back(sqlite3_column_int(stmt, 0));
+    }
+    sqlite3_finalize(stmt);
+    std::sort(applied.begin(), applied.end());
+    applied.erase(std::unique(applied.begin(), applied.end()), applied.end());
+    return applied;
 }
 }  // namespace
 
@@ -128,6 +170,56 @@ common::Result<int> MigrationRunner::run(const std::string& migrationsDir) {
     }
 
     return common::Result<int>::ok(applied);
+}
+
+common::Result<bool> MigrationRunner::dryRun(const std::string& migrationsDir) {
+    if (!db_.isOpen()) {
+        return common::Result<bool>::err(common::ErrorCode::MigrationError,
+                                         "database not open");
+    }
+    std::string err;
+    auto nums = collectMigrationNumbers(migrationsDir, &err);
+    if (!err.empty()) {
+        return common::Result<bool>::err(common::ErrorCode::MigrationError, err);
+    }
+    int current = currentVersion();
+    for (int n : nums) {
+        if (n > current) {
+            return common::Result<bool>::ok(true);
+        }
+    }
+    return common::Result<bool>::ok(false);
+}
+
+std::string MigrationRunner::checksum() const {
+    auto applied = appliedVersions(db_.isOpen() ? db_.handle() : nullptr);
+    // FNV-1a 64-bit over the sorted applied version list.
+    std::uint64_t h = 1469598103934665603ULL;
+    for (int v : applied) {
+        std::string s = std::to_string(v) + ",";
+        for (char c : s) {
+            h ^= static_cast<unsigned char>(c);
+            h *= 1099511628211ULL;
+        }
+    }
+    char buf[17] = {0};
+    std::snprintf(buf, sizeof(buf), "%016llx",
+                  static_cast<unsigned long long>(h));
+    return std::string(buf);
+}
+
+common::Result<bool> MigrationRunner::verify(const std::string& migrationsDir) {
+    if (!db_.isOpen()) {
+        return common::Result<bool>::err(common::ErrorCode::MigrationError,
+                                         "database not open");
+    }
+    std::string err;
+    auto fileNums = collectMigrationNumbers(migrationsDir, &err);
+    if (!err.empty()) {
+        return common::Result<bool>::err(common::ErrorCode::MigrationError, err);
+    }
+    auto applied = appliedVersions(db_.handle());
+    return common::Result<bool>::ok(applied == fileNums);
 }
 
 }  // namespace lodestar::persistence

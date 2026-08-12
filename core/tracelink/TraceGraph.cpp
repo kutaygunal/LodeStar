@@ -3,9 +3,30 @@
 
 #include "core/tracelink/TraceGraph.h"
 
+#include "core/common/Uuid.h"
+
 namespace lodestar::tracelink {
 
 TraceGraph::TraceGraph(persistence::Database& db) : db_(db), service_(db) {}
+
+namespace {
+// Legacy wrappers historically auto-generated an external id when the caller
+// left it empty. The service now rejects empty external ids (WP-F / B3), so the
+// facade supplies a default here to keep the legacy convenience path working.
+std::string defaultExternalId(EntityType type) {
+    const char* prefix = "ENT";
+    switch (type) {
+        case EntityType::Requirement: prefix = "REQ"; break;
+        case EntityType::Design:      prefix = "DES"; break;
+        case EntityType::Interface:   prefix = "IF"; break;
+        case EntityType::TestCase:    prefix = "TC"; break;
+        case EntityType::Hazard:      prefix = "HAZ"; break;
+        case EntityType::Decision:    prefix = "DEC"; break;
+        case EntityType::Assumption:  prefix = "ASS"; break;
+    }
+    return std::string(prefix) + "-" + lodestar::common::newUuid().substr(0, 8);
+}
+}  // namespace
 
 // ---------------------------------------------------------------------------
 // Legacy entity creation wrappers.
@@ -14,7 +35,8 @@ common::Result<void> TraceGraph::addRequirement(persistence::Requirement& r) {
     Entity e;
     e.type = EntityType::Requirement;
     e.id = r.id;
-    e.externalId = r.externalId;
+    e.externalId = r.externalId.empty() ? defaultExternalId(EntityType::Requirement)
+                                        : r.externalId;
     e.name = r.name;
     e.text = r.description;
     e.status = r.status;
@@ -32,7 +54,8 @@ common::Result<void> TraceGraph::addDesignItem(persistence::DesignItem& d) {
     Entity e;
     e.type = EntityType::Design;
     e.id = d.id;
-    e.externalId = d.externalId;
+    e.externalId = d.externalId.empty() ? defaultExternalId(EntityType::Design)
+                                        : d.externalId;
     e.name = d.name;
     e.text = d.description;
     e.status = d.status;
@@ -46,7 +69,8 @@ common::Result<void> TraceGraph::addInterface(persistence::InterfaceDef& i) {
     Entity e;
     e.type = EntityType::Interface;
     e.id = i.id;
-    e.externalId = i.externalId;
+    e.externalId = i.externalId.empty() ? defaultExternalId(EntityType::Interface)
+                                        : i.externalId;
     e.name = i.name;
     e.text = i.description;
     e.status = i.status;
@@ -60,7 +84,8 @@ common::Result<void> TraceGraph::addTestCase(persistence::TestCase& t) {
     Entity e;
     e.type = EntityType::TestCase;
     e.id = t.id;
-    e.externalId = t.externalId;
+    e.externalId = t.externalId.empty() ? defaultExternalId(EntityType::TestCase)
+                                        : t.externalId;
     e.name = t.name;
     e.text = t.description;
     e.status = t.status;

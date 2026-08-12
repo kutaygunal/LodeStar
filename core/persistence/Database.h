@@ -42,6 +42,14 @@ public:
     // Row id of the most recent successful INSERT.
     long long lastInsertRowId() const;
 
+    // WP-F (B4): writes a consistent snapshot of the current database to
+    // destPath using the SQLite online backup API (safe under WAL).
+    common::Result<void> backup(const std::string& destPath);
+
+    // WP-F (B4): replaces the current database contents with a snapshot taken
+    // from srcPath (a file produced by backup()).
+    common::Result<void> restore(const std::string& srcPath);
+
 private:
     sqlite3* db_ = nullptr;
 };

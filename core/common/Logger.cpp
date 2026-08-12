@@ -67,4 +67,36 @@ void Logger::log(LogLevel level, const std::string& message) {
     }
 }
 
+void Logger::structured(LogLevel level, const std::string& event,
+                        const std::string& fieldsJson) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (static_cast<int>(level) < static_cast<int>(level_)) {
+        return;
+    }
+    std::time_t now = std::time(nullptr);
+    std::tm tm{};
+#if defined(_WIN32)
+    localtime_s(&tm, &now);
+#else
+    localtime_r(&now, &tm);
+#endif
+    char stamp[32] = {0};
+    std::strftime(stamp, sizeof(stamp), "%Y-%m-%dT%H:%M:%S", &tm);
+
+    std::string line = "{\"ts\":\"" + std::string(stamp) +
+                       "\",\"level\":\"" + levelName(level) +
+                       "\",\"event\":\"" + event +
+                       "\",\"fields\":" + fieldsJson + "}\n";
+    std::FILE* out = file_ != nullptr ? file_ : stderr;
+    std::fputs(line.c_str(), out);
+    std::fflush(out);
+}
+
+void Logger::flush() {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (file_ != nullptr) {
+        std::fflush(file_);
+    }
+}
+
 }  // namespace lodestar::common

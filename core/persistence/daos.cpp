@@ -201,27 +201,29 @@ const std::vector<std::string> kDesignCols = {
 
 const std::vector<std::string> kInterfaceCols = {
     "id", "external_id", "name", "description", "status", "direction",
-    "source_entity", "target_entity", "data_items", "protocol", "tags",
-    "version", "created_by", "created_at", "updated_by", "updated_at"};
+    "source_entity", "target_entity", "data_items", "protocol", "parent_id",
+    "sort_order", "tags", "version", "created_by", "created_at", "updated_by",
+    "updated_at"};
 
 const std::vector<std::string> kTestCaseCols = {
     "id", "external_id", "name", "description", "status", "verification_method",
-    "result_status", "priority", "tags", "version", "created_by", "created_at",
-    "updated_by", "updated_at"};
+    "result_status", "priority", "parent_id", "sort_order", "tags", "version",
+    "created_by", "created_at", "updated_by", "updated_at"};
 
 const std::vector<std::string> kHazardCols = {
     "id", "external_id", "name", "description", "status", "severity",
-    "likelihood", "owner", "tags", "version", "created_by", "created_at",
-    "updated_by", "updated_at"};
+    "likelihood", "owner", "parent_id", "sort_order", "tags", "version",
+    "created_by", "created_at", "updated_by", "updated_at"};
 
 const std::vector<std::string> kDecisionCols = {
     "id", "external_id", "name", "description", "status", "rationale", "owner",
-    "date", "tags", "version", "created_by", "created_at", "updated_by",
-    "updated_at"};
+    "date", "parent_id", "sort_order", "tags", "version", "created_by",
+    "created_at", "updated_by", "updated_at"};
 
 const std::vector<std::string> kAssumptionCols = {
-    "id", "external_id", "name", "description", "status", "owner", "tags",
-    "version", "created_by", "created_at", "updated_by", "updated_at"};
+    "id", "external_id", "name", "description", "status", "owner", "parent_id",
+    "sort_order", "tags", "version", "created_by", "created_at", "updated_by",
+    "updated_at"};
 
 const std::vector<std::string> kLinkCols = {
     "id", "source_type", "source_id", "target_type", "target_id", "relation",
@@ -300,6 +302,8 @@ InterfaceDef fromInterfaceRow(const Row& row) {
     i.targetEntity = row.at("target_entity");
     i.dataItems = row.at("data_items");
     i.protocol = row.at("protocol");
+    i.parentId = row.at("parent_id");
+    i.sortOrder = toInt(row.at("sort_order"));
     i.tags = row.at("tags");
     i.version = toInt(row.at("version"), 1);
     i.createdBy = row.at("created_by");
@@ -312,8 +316,9 @@ InterfaceDef fromInterfaceRow(const Row& row) {
 std::vector<std::string> interfaceValues(const InterfaceDef& i) {
     return {i.id,          i.externalId,  i.name,      i.description,
             i.status,      i.direction,   i.sourceEntity, i.targetEntity,
-            i.dataItems,   i.protocol,    i.tags,      std::to_string(i.version),
-            i.createdBy,   i.createdAt,   i.updatedBy, i.updatedAt};
+            i.dataItems,   i.protocol,   i.parentId,  std::to_string(i.sortOrder),
+            i.tags,        std::to_string(i.version), i.createdBy, i.createdAt,
+            i.updatedBy,   i.updatedAt};
 }
 
 TestCase fromTestCaseRow(const Row& row) {
@@ -326,6 +331,8 @@ TestCase fromTestCaseRow(const Row& row) {
     t.verificationMethod = row.at("verification_method");
     t.resultStatus = row.at("result_status");
     t.priority = row.at("priority");
+    t.parentId = row.at("parent_id");
+    t.sortOrder = toInt(row.at("sort_order"));
     t.tags = row.at("tags");
     t.version = toInt(row.at("version"), 1);
     t.createdBy = row.at("created_by");
@@ -337,9 +344,9 @@ TestCase fromTestCaseRow(const Row& row) {
 
 std::vector<std::string> testCaseValues(const TestCase& t) {
     return {t.id,       t.externalId, t.name, t.description, t.status,
-            t.verificationMethod, t.resultStatus, t.priority, t.tags,
-            std::to_string(t.version), t.createdBy, t.createdAt, t.updatedBy,
-            t.updatedAt};
+            t.verificationMethod, t.resultStatus, t.priority, t.parentId,
+            std::to_string(t.sortOrder), t.tags, std::to_string(t.version),
+            t.createdBy, t.createdAt, t.updatedBy, t.updatedAt};
 }
 
 Hazard fromHazardRow(const Row& row) {
@@ -352,6 +359,8 @@ Hazard fromHazardRow(const Row& row) {
     h.severity = row.at("severity");
     h.likelihood = row.at("likelihood");
     h.owner = row.at("owner");
+    h.parentId = row.at("parent_id");
+    h.sortOrder = toInt(row.at("sort_order"));
     h.tags = row.at("tags");
     h.version = toInt(row.at("version"), 1);
     h.createdBy = row.at("created_by");
@@ -363,7 +372,8 @@ Hazard fromHazardRow(const Row& row) {
 
 std::vector<std::string> hazardValues(const Hazard& h) {
     return {h.id,       h.externalId, h.name, h.description, h.status,
-            h.severity, h.likelihood, h.owner, h.tags, std::to_string(h.version),
+            h.severity, h.likelihood, h.owner, h.parentId,
+            std::to_string(h.sortOrder), h.tags, std::to_string(h.version),
             h.createdBy, h.createdAt, h.updatedBy, h.updatedAt};
 }
 
@@ -377,6 +387,8 @@ Decision fromDecisionRow(const Row& row) {
     d.rationale = row.at("rationale");
     d.owner = row.at("owner");
     d.date = row.at("date");
+    d.parentId = row.at("parent_id");
+    d.sortOrder = toInt(row.at("sort_order"));
     d.tags = row.at("tags");
     d.version = toInt(row.at("version"), 1);
     d.createdBy = row.at("created_by");
@@ -388,7 +400,8 @@ Decision fromDecisionRow(const Row& row) {
 
 std::vector<std::string> decisionValues(const Decision& d) {
     return {d.id,       d.externalId, d.name, d.description, d.status,
-            d.rationale, d.owner,     d.date, d.tags, std::to_string(d.version),
+            d.rationale, d.owner,     d.date, d.parentId,
+            std::to_string(d.sortOrder), d.tags, std::to_string(d.version),
             d.createdBy, d.createdAt, d.updatedBy, d.updatedAt};
 }
 
@@ -400,6 +413,8 @@ Assumption fromAssumptionRow(const Row& row) {
     a.description = row.at("description");
     a.status = row.at("status");
     a.owner = row.at("owner");
+    a.parentId = row.at("parent_id");
+    a.sortOrder = toInt(row.at("sort_order"));
     a.tags = row.at("tags");
     a.version = toInt(row.at("version"), 1);
     a.createdBy = row.at("created_by");
@@ -411,7 +426,8 @@ Assumption fromAssumptionRow(const Row& row) {
 
 std::vector<std::string> assumptionValues(const Assumption& a) {
     return {a.id,       a.externalId, a.name, a.description, a.status, a.owner,
-            a.tags,     std::to_string(a.version), a.createdBy, a.createdAt,
+            a.parentId, std::to_string(a.sortOrder), a.tags,
+            std::to_string(a.version), a.createdBy, a.createdAt,
             a.updatedBy, a.updatedAt};
 }
 

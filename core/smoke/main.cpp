@@ -70,6 +70,7 @@ int main(int argc, char** argv) {
 
     // Insert a requirement and a test case.
     persistence::Requirement req;
+    req.externalId = "REQ-001";
     req.name = "REQ-001";
     req.description = "The system shall provide GNSS position output.";
     auto addReq = graph.addRequirement(req);
@@ -78,6 +79,7 @@ int main(int argc, char** argv) {
     }
 
     persistence::TestCase tc;
+    tc.externalId = "TC-001";
     tc.name = "TC-001";
     tc.description = "Verify GNSS position output accuracy.";
     auto addTc = graph.addTestCase(tc);

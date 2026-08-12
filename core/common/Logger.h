@@ -28,6 +28,15 @@ public:
     void warn(const std::string& m) { log(LogLevel::Warn, m); }
     void error(const std::string& m) { log(LogLevel::Error, m); }
 
+    // WP-F (B8): writes one JSON line to the log file (or stderr if no file is
+    // set): {"ts":...,"level":...,"event":...,"fields":{...}}. The caller
+    // supplies a pre-encoded JSON object for `fieldsJson`.
+    void structured(LogLevel level, const std::string& event,
+                    const std::string& fieldsJson);
+
+    // WP-F (B8): flushes the log file so structured records are durable.
+    void flush();
+
     static const char* levelName(LogLevel level);
 
 private:

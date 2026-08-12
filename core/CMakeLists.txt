@@ -223,4 +223,34 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_tracelink)
     target_compile_definitions(lodestar_wp8_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- WP-A: search + pagination (FTS5 ranked search, limit/offset) ------
+    add_executable(lodestar_wpA_tests
+        test/wpA_tests.cpp)
+    target_link_libraries(lodestar_wpA_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wpA_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- WP-C: hierarchy tree (parent/child, subtree, reorder) -------------
+    add_executable(lodestar_wpC_tests
+        test/wpC_tests.cpp)
+    target_link_libraries(lodestar_wpC_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wpC_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- WP-F: robustness hardening (error codes, validation, backup, ...) -
+    add_executable(lodestar_wpF_tests
+        test/wpF_tests.cpp)
+    target_link_libraries(lodestar_wpF_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wpF_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()

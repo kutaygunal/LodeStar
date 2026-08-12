@@ -1,30 +1,36 @@
-# Plan
+# Plan — TraceLink v2 (Phase 9)
 
-Purpose: Execute the TraceLink commercial-grade plan (docs/tracelink-plan.md) in the existing
-Lodestar C++ core. Implement WP-1 through WP-8 in dependency order. RiskAI is deferred to the
-very last phase (out of scope for this loop).
+Purpose: Add all requested new functionalities and robustness hardening to the TraceLink
+module in ONE phase, commercial grade. Builds on the completed WP-1..WP-8 (all committed and
+pushed). RiskAI remains OUT OF SCOPE.
 
-Context: Lodestar is a C++17 CMake monorepo (MSVC/Windows) with an existing working core
-(common, persistence, tracelink, scenario, adapters, api, testforge). Build: `cmake --build
-build --config Release`. Self-verify: `./build/core/Release/lodestar_smoke.exe`. Each module
-is a CMake static lib target (`lodestar_*`). Schema is append-only migrations in
-`core/persistence/migrations/`. The thin REST API lives in `core/api/ApiServer.cpp`.
+Context: Lodestar C++17 CMake monorepo (MSVC/Windows). Build: `cmake --build build --config
+Release` (HARD TIMEOUT). Self-verify: `./build/core/Release/lodestar_smoke.exe`. TraceLink
+module: `core/tracelink/` (TraceLinkService, GraphEngine, RulesEngine, BaselineService,
+IoService, StateMachine, ViewModelFactory, Types). REST API: `core/api/TraceLinkApiServer.cpp`.
+Tests: `core/test/wp*_tests.cpp` (all currently pass). Schema: append-only migrations in
+`core/persistence/migrations/` (001-009 exist). Qt UI views exist in `ui/` but are NOT built
+(LODESTAR_BUILD_UI=OFF, Qt not installed).
 
-| # | WP | Description | Priority | Status | Assigned to | Tests | Committed |
-|---|-----|-------------|----------|--------|-------------|-------|-----------|
-| 1 | Domain model + schema | Rich typed entities + typed links + metadata; migrations 003/004; DAO CRUD/update/soft-delete/search; status state machines; integrity on write (dangling/duplicate/self-loop/relation-type) | High | DONE | senior-engineer-wp1 | PASS (60/60 + 118/118 smoke) | f5c91b5 |
-| 2 | Graph engine | upstream/downstream closure, impactAnalysis, coverage/coverageGap, traceMatrix, reverse-relation mapping | High | DONE | senior-engineer-wp2 | PASS (0 fail; WP-1 regression 0) | 2fd64e5 |
-| 3 | Rules engine + validation | rule data model, evaluation, built-in templates (REQ_MUST_BE_VERIFIED etc.), validation_runs + compliance_violations, standard tagging | High | DONE | senior-engineer-wp3 | PASS (0 fail; 7 sections) | 9030690 |
-| 4 | Audit + baselines + diff | audit_log writes on every mutation; Baselines snapshots; diffBaseline(a,b); history; entityAtBaseline | Medium | DONE | senior-engineer-wp4 | PASS (0 fail; audit/diff acceptance) | adfc439 |
-| 5 | Import/Export | CSV matrix+entities export, HTML report, ReqIF import+export, non-destructive import with batch+log | Medium | DONE | senior-engineer-wp5 | PASS (28/28; round-trip) | 8e40db6 |
-| 6 | REST API | all /tracelink routes in ApiServer; smoke each endpoint | Medium | DONE | senior-engineer-wp6 | PASS (37/37; acceptance chain) | 03d6866 |
-| 7 | Qt UI views | matrix view, graph view, impact view, coverage/compliance dashboard | Medium | DONE | senior-engineer-wp7 | PASS (34/34 view models; Qt src gated) | 170c18a |
-| 8 | Commercial hardening | WAL mode, BEGIN IMMEDIATE transactions, performance indexes, 10k-node perf, docs | Low | DONE | senior-engineer-wp8 | PASS (22/22; 10k perf 5.25s) | eb75640 |
+## Work packages (all in this phase)
+
+| # | WP | Tasks (from options) | Priority | Status | Assigned to | Tests | Committed |
+|---|-----|----------------------|----------|--------|-------------|-------|-----------|
+| A | Search + pagination | A1 FTS5 full-text search (ranked); B1 pagination (limit/offset) on all list endpoints | High | TODO | - | - | - |
+| B | Change management | A3 baseline restore/rollback; A4 change-request + review workflow (approve/reject, review queues, link CRs to audit) | High | TODO | - | - | - |
+| C | Hierarchy tree | A2 requirement hierarchy tree: parent/child navigation, subtree ops, reorder | High | TODO | - | - | - |
+| D | Coverage + evidence | A5 coverage by verification method; A6 DO-178C evidence package export (matrix+coverage+validation+audit bundle) | Med | TODO | - | - | - |
+| E | API + duplicates | A8 REST API auth / API keys; A9 duplicate/similarity detection | Med | TODO | - | - | - |
+| F | Robustness hardening | B2 typed error codes; B3 input validation & size limits; B4 DB backup/restore; B5 migration safety (dry-run/rollback/checksum); B6 fuzz/edge-case tests; B7 concurrency stress test; B8 structured logging | High | DONE | senior-engineer-wpf | PASS (37/37) | cb381d7 |
+| G | Real Qt UI | A7 install Qt, enable LODESTAR_BUILD_UI=ON, wire the 4 views (matrix/graph/impact/coverage) to the service | Med | TODO | - | - | - |
 
 ## Dependency order
-WP-1 -> WP-2 -> WP-3 -> WP-4 -> WP-5/6 -> WP-7/8. WP-4 audit can start parallel with WP-3.
+WP-A, WP-C, WP-F are independent and can run in parallel. WP-B depends on WP-A (pagination
+for review queues) lightly; WP-D depends on WP-C (hierarchy for evidence) and WP-A. WP-E
+depends on WP-A (pagination) and WP-F (error codes). WP-G depends on WP-A..WP-F (needs the
+full service surface). Recommended: run A, C, F in parallel first; then B, D, E; then G.
 
 ## Working rules
 Follow docs/working-rules.md. Build with HARD TIMEOUT, run tests ONE AT A TIME. Only
-devops-<phase> commits/pushes. Update Status/Committed columns and commit as chore(...)
-after each phase.
+devops-<wp> commits/pushes. Update Status/Committed columns and commit as chore(...) after
+each WP. Every WP must be commercial grade: full tests, no regressions, smoke passes.

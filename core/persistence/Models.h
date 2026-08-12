@@ -62,6 +62,8 @@ struct InterfaceDef {
     std::string targetEntity;
     std::string dataItems;
     std::string protocol;
+    std::string parentId;
+    int sortOrder = 0;
     std::string tags;
     int version = 1;
     std::string createdBy;
@@ -79,6 +81,8 @@ struct TestCase {
     std::string verificationMethod;
     std::string resultStatus = "NotExecuted";
     std::string priority = "Medium";
+    std::string parentId;
+    int sortOrder = 0;
     std::string tags;
     int version = 1;
     std::string createdBy;
@@ -96,6 +100,8 @@ struct Hazard {
     std::string severity;
     std::string likelihood;
     std::string owner;
+    std::string parentId;
+    int sortOrder = 0;
     std::string tags;
     int version = 1;
     std::string createdBy;
@@ -113,6 +119,8 @@ struct Decision {
     std::string rationale;
     std::string owner;
     std::string date;
+    std::string parentId;
+    int sortOrder = 0;
     std::string tags;
     int version = 1;
     std::string createdBy;
@@ -128,6 +136,8 @@ struct Assumption {
     std::string description;
     std::string status = "Active";
     std::string owner;
+    std::string parentId;
+    int sortOrder = 0;
     std::string tags;
     int version = 1;
     std::string createdBy;

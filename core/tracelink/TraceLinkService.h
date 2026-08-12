@@ -15,6 +15,21 @@
 
 namespace lodestar::tracelink {
 
+// One ranked full-text search hit (WP-A, A1).
+struct SearchHit {
+    EntityType type = EntityType::Requirement;
+    std::string id;
+    std::string externalId;
+    std::string name;
+    double rank = 0.0;  // FTS5 bm25 score; LOWER is a better match
+};
+
+// A nested hierarchy node: an entity plus its ordered children.
+struct HierarchyNode {
+    Entity entity;
+    std::vector<HierarchyNode> children;
+};
+
 class TraceLinkService {
 public:
     explicit TraceLinkService(persistence::Database& db);
@@ -37,6 +52,19 @@ public:
     // Full-text search across name + description.
     common::Result<std::vector<Entity>> search(EntityType type, const std::string& text);
 
+    // --- WP-A: FTS5 ranked full-text search --------------------------------
+    // Rebuilds the FTS5 index from every entity table. Safe to call any time.
+    common::Result<void> rebuildSearchIndex();
+
+    // Ranked full-text search across name + body for one entity type.
+    // text is a plain term/phrase (the service escapes it for FTS5 MATCH).
+    // limit/offset paginate the ranked result set (0 = no limit).
+    // Results are ordered best-match-first (ascending bm25 rank).
+    // The name column is weighted HIGHER than body, so a name match always
+    // ranks above a body-only match for the same term.
+    common::Result<std::vector<SearchHit>> searchRanked(
+        EntityType type, const std::string& text, int limit = 0, int offset = 0);
+
     // --- Links -------------------------------------------------------------
     // Validates nodes exist (no dangling), no self-loop, no duplicate, and the
     // relation is legal for the source/target pair.
@@ -58,6 +86,37 @@ public:
                            const std::string& to);
     common::Result<void> transition(EntityType type, const std::string& id,
                                     const std::string& to);
+
+    // --- Hierarchy tree (WP-C / A2) ----------------------------------------
+    // Sets the parent of `id` to `parentId`. Both must exist and be the same
+    // entity type. Rejects a cycle (parentId must not be `id` or a descendant
+    // of `id`). Pass an empty parentId to detach (make it a root).
+    common::Result<void> setParent(EntityType type, const std::string& id,
+                                   const std::string& parentId);
+
+    // Direct children of parentId ("" = roots), ordered by sortOrder then id.
+    common::Result<std::vector<Entity>> children(EntityType type,
+                                                 const std::string& parentId);
+
+    // All descendants of `id` (recursive, excludes `id` itself).
+    common::Result<std::vector<Entity>> subtree(EntityType type,
+                                                const std::string& id);
+
+    // The ancestor chain of `id` from its immediate parent up to the root.
+    common::Result<std::vector<Entity>> ancestors(EntityType type,
+                                                  const std::string& id);
+
+    // Reorders the direct children of parentId to the given id order,
+    // assigning sortOrder 0..N-1 in that order.
+    common::Result<void> reorder(EntityType type, const std::string& parentId,
+                                 const std::vector<std::string>& orderedIds);
+
+    // All entities of `type` with no parent (roots), ordered by sortOrder.
+    common::Result<std::vector<Entity>> rootNodes(EntityType type);
+
+    // Builds the full nested tree rooted at `id` (recursive).
+    common::Result<HierarchyNode> buildTree(EntityType type,
+                                            const std::string& rootId);
 
 private:
     bool nodeExists(EntityType type, const std::string& id);
