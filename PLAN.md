@@ -33,7 +33,7 @@ coverage wiring, user roles/permissions+concurrent editing.
 | 3 | Compliance templates/checklists | Guided OOTB templates/checklists for ARP4754A/ARP4761/DO-178C/DO-254; migration 015 | Med | DONE | senior-engineer-wp3 | wp3_compliance_tests | b0942f8 |
 | 4 | Roles/permissions + concurrency | User roles + permissions (RBAC) on entities/links; concurrent-edit safety (optimistic locking/version check); migration 016 | Med | DONE | senior-engineer-wp4 | wp4_rbac_tests | 1297129 |
 | 5 | TestForge coverage wiring | Wire TestForge test runs into live coverage (coverage reflects executed results) | Med | DONE | senior-engineer-wp5 | wp5_coverage_tests | fdb42a9 |
-| 6 | Qt UI shell | Left-nav project tree + right-side detail/properties panel; enable LODESTAR_BUILD_UI=ON with Qt 6.8.2 | Med | TODO | - | - | - |
+| 6 | Qt UI shell | Left-nav project tree + right-side detail/properties panel; enable LODESTAR_BUILD_UI=ON with Qt 6.8.2 | Med | DONE | senior-engineer-wp6 | wp6_ui_tests | ae79d3d |
 | 7 | Coverage dashboard + charts | Live coverage dashboard (red/green gaps) + status/priority/coverage charts | High | TODO | - | - | - |
 | 8 | Interactive traceability matrix | Search, filter, saved views, relationship toggling, export | Med | TODO | - | - | - |
 | 9 | Baseline visual diff + rollback | Visual compare view + per-item rollback UI | Med | TODO | - | - | - |
