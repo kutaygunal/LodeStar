@@ -98,6 +98,11 @@ public:
     common::Result<std::optional<Entity>>
         entityAtBaseline(EntityType type, const std::string& id, const std::string& baselineId);
 
+    // Restores the current database to the exact state captured in `baselineId`
+    // (entity fields/status/version and the link set are reverted to the
+    // snapshot). Returns the number of entities restored.
+    common::Result<int> restoreBaseline(const std::string& baselineId);
+
     // Audit entries tagged to a change request + downstream affected entities.
     common::Result<ImpactResult>
         changeImpact(EntityType type, const std::string& id, const std::string& changeRequestId);

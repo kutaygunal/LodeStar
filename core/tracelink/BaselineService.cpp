@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <ctime>
 #include <map>
+#include <set>
 #include <utility>
 
 #include <sqlite3.h>
@@ -388,6 +389,168 @@ AuditEntry entryFromRow(const std::vector<std::string>& r) {
     return e;
 }
 
+// ---------------------------------------------------------------------------
+// Baseline restore helpers.
+// ---------------------------------------------------------------------------
+// Writes the exact snapshot state of an entity back into its table using
+// INSERT OR REPLACE (restores existing rows and revives soft-deleted ones).
+// The snapshot carries the full field set + version, so the row is reverted
+// to the point-in-time state captured in the baseline.
+common::Result<void> restoreEntityRow(sqlite3* db, EntityType type, const Entity& e) {
+    std::vector<std::string> cols, vals;
+    auto add = [&](const std::string& c, const std::string& v) {
+        cols.push_back(c);
+        vals.push_back(v);
+    };
+    add("id", e.id);
+    add("external_id", e.externalId);
+    add("name", e.name);
+    add("description", e.text);
+    add("status", e.status);
+    add("version", std::to_string(e.version));
+    add("created_by", e.createdBy);
+    add("created_at", e.createdAt);
+    add("updated_by", e.updatedBy);
+    add("updated_at", e.updatedAt);
+
+    std::string table;
+    switch (type) {
+        case EntityType::Requirement:
+            table = "requirements";
+            add("type", e.typeAttr.empty() ? "functional" : e.typeAttr);
+            add("priority", e.priority);
+            add("source", e.source);
+            add("owner", e.owner);
+            add("rationale", e.rationale);
+            add("verification_method", e.verificationMethod);
+            add("safety_level", e.safetyLevel);
+            add("parent_id", e.parentId);
+            add("sort_order", std::to_string(e.sortOrder));
+            add("tags", e.tags);
+            break;
+        case EntityType::Design:
+            table = "design_items";
+            add("type", e.typeAttr.empty() ? "component" : e.typeAttr);
+            add("owner", e.owner);
+            add("parent_id", e.parentId);
+            add("tags", e.tags);
+            break;
+        case EntityType::Interface:
+            table = "interfaces";
+            add("direction", e.direction);
+            add("source_entity", e.sourceEntity);
+            add("target_entity", e.targetEntity);
+            add("data_items", e.dataItems);
+            add("protocol", e.protocol);
+            add("parent_id", e.parentId);
+            add("sort_order", std::to_string(e.sortOrder));
+            add("tags", e.tags);
+            break;
+        case EntityType::TestCase:
+            table = "test_cases";
+            add("verification_method", e.verificationMethod);
+            add("result_status", e.resultStatus);
+            add("priority", e.priority);
+            add("parent_id", e.parentId);
+            add("sort_order", std::to_string(e.sortOrder));
+            add("tags", e.tags);
+            break;
+        case EntityType::Hazard:
+            table = "hazards";
+            add("severity", e.severity);
+            add("likelihood", e.likelihood);
+            add("owner", e.owner);
+            add("parent_id", e.parentId);
+            add("sort_order", std::to_string(e.sortOrder));
+            add("tags", e.tags);
+            break;
+        case EntityType::Decision:
+            table = "decisions";
+            add("rationale", e.rationale);
+            add("owner", e.owner);
+            add("date", e.date);
+            add("parent_id", e.parentId);
+            add("sort_order", std::to_string(e.sortOrder));
+            add("tags", e.tags);
+            break;
+        case EntityType::Assumption:
+            table = "assumptions";
+            add("owner", e.owner);
+            add("parent_id", e.parentId);
+            add("sort_order", std::to_string(e.sortOrder));
+            add("tags", e.tags);
+            break;
+    }
+
+    std::string sql = "INSERT OR REPLACE INTO " + table + " (";
+    for (size_t i = 0; i < cols.size(); ++i) {
+        if (i) sql += ",";
+        sql += cols[i];
+    }
+    sql += ") VALUES (";
+    for (size_t i = 0; i < cols.size(); ++i) {
+        if (i) sql += ",";
+        sql += "?";
+    }
+    sql += ");";
+
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        return common::Result<void>::err("prepare failed: " +
+                                         std::string(sqlite3_errmsg(db)));
+    }
+    for (size_t i = 0; i < vals.size(); ++i) {
+        bindText(stmt, static_cast<int>(i + 1), vals[i]);
+    }
+    int rc = sqlite3_step(stmt);
+    std::string msg = sqlite3_errmsg(db);
+    sqlite3_finalize(stmt);
+    if (rc != SQLITE_DONE) {
+        return common::Result<void>::err("restore entity failed: " + msg);
+    }
+    return common::Result<void>::ok();
+}
+
+// Writes the exact snapshot state of a link back into trace_links using
+// INSERT OR REPLACE (restores the link to Active with its snapshot fields).
+common::Result<void> restoreLinkRow(sqlite3* db, const Link& l) {
+    std::vector<std::string> cols = {
+        "id", "source_type", "source_id", "target_type", "target_id",
+        "relation", "rationale", "status", "created_by", "created_at",
+        "updated_at", "version", "superseded_by", "valid_from", "valid_to"};
+    std::vector<std::string> vals = {
+        l.id, toString(l.sourceType), l.sourceId, toString(l.targetType),
+        l.targetId, l.relation, l.rationale, l.status, l.createdBy, l.createdAt,
+        l.updatedAt, std::to_string(l.version), l.supersededBy, l.validFrom,
+        l.validTo};
+    std::string sql = "INSERT OR REPLACE INTO trace_links (";
+    for (size_t i = 0; i < cols.size(); ++i) {
+        if (i) sql += ",";
+        sql += cols[i];
+    }
+    sql += ") VALUES (";
+    for (size_t i = 0; i < cols.size(); ++i) {
+        if (i) sql += ",";
+        sql += "?";
+    }
+    sql += ");";
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        return common::Result<void>::err("prepare failed: " +
+                                         std::string(sqlite3_errmsg(db)));
+    }
+    for (size_t i = 0; i < vals.size(); ++i) {
+        bindText(stmt, static_cast<int>(i + 1), vals[i]);
+    }
+    int rc = sqlite3_step(stmt);
+    std::string msg = sqlite3_errmsg(db);
+    sqlite3_finalize(stmt);
+    if (rc != SQLITE_DONE) {
+        return common::Result<void>::err("restore link failed: " + msg);
+    }
+    return common::Result<void>::ok();
+}
+
 }  // namespace
 
 // ---------------------------------------------------------------------------
@@ -679,6 +842,81 @@ common::Result<ImpactResult> BaselineService::changeImpact(
     result.downstreamAffected = std::move(down.value());
 
     return common::Result<ImpactResult>::ok(std::move(result));
+}
+
+common::Result<int> BaselineService::restoreBaseline(const std::string& baselineId) {
+    // The baseline must exist.
+    auto bl = getBaseline(baselineId);
+    if (bl.failed()) return common::Result<int>::err(bl.error());
+    if (!bl.value()) {
+        return common::Result<int>::err(common::ErrorCode::NotFound,
+                                        "baseline not found: " + baselineId);
+    }
+
+    // Entity snapshots for this baseline.
+    auto entRows = query(db_.handle(),
+                         "SELECT entity_type, entity_id, snapshot FROM "
+                         "baseline_entities WHERE baseline_id=?;",
+                         {baselineId}, 3);
+    if (entRows.failed()) return common::Result<int>::err(entRows.error());
+
+    // Link snapshots for this baseline.
+    auto linkRows = query(db_.handle(),
+                          "SELECT link_id, snapshot FROM baseline_links "
+                          "WHERE baseline_id=?;",
+                          {baselineId}, 2);
+    if (linkRows.failed()) return common::Result<int>::err(linkRows.error());
+
+    auto begin = db_.execute("BEGIN IMMEDIATE;");
+    if (begin.failed()) return common::Result<int>::err("BEGIN failed");
+
+    int restored = 0;
+    for (const auto& r : entRows.value()) {
+        auto typeOpt = entityTypeFromString(r[0]);
+        if (!typeOpt) continue;
+        Entity e = deserializeEntity(r[2], *typeOpt);
+        auto res = restoreEntityRow(db_.handle(), *typeOpt, e);
+        if (res.failed()) {
+            db_.execute("ROLLBACK;");
+            return common::Result<int>::err(res.error());
+        }
+        ++restored;
+    }
+
+    // Revert the link set: restore every snapshot link and mark any current
+    // link that is not part of the baseline as Superseded.
+    std::set<std::string> baselineLinkIds;
+    for (const auto& r : linkRows.value()) {
+        baselineLinkIds.insert(r[0]);
+        Link l = deserializeLink(r[1]);
+        auto res = restoreLinkRow(db_.handle(), l);
+        if (res.failed()) {
+            db_.execute("ROLLBACK;");
+            return common::Result<int>::err(res.error());
+        }
+    }
+    auto currentLinks = query(db_.handle(), "SELECT id FROM trace_links;", {}, 1);
+    if (currentLinks.failed()) {
+        db_.execute("ROLLBACK;");
+        return common::Result<int>::err(currentLinks.error());
+    }
+    for (const auto& r : currentLinks.value()) {
+        if (baselineLinkIds.find(r[0]) != baselineLinkIds.end()) continue;
+        auto res = exec(db_.handle(),
+                        "UPDATE trace_links SET status='Superseded' WHERE id=?;",
+                        {r[0]});
+        if (res.failed()) {
+            db_.execute("ROLLBACK;");
+            return common::Result<int>::err(res.error());
+        }
+    }
+
+    auto commit = db_.execute("COMMIT;");
+    if (commit.failed()) {
+        db_.execute("ROLLBACK;");
+        return common::Result<int>::err("COMMIT failed");
+    }
+    return common::Result<int>::ok(restored);
 }
 
 }  // namespace lodestar::tracelink
