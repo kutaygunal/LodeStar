@@ -1,46 +1,71 @@
-# Plan — AssureCheck WP-6 Finish (Phase 11b)
+# Plan — Sprint 1: "Make it run"
 
-Purpose: **Finish AssureCheck WP-6** (REST API + compliance dashboard) which was left
-incomplete when the previous loop was killed. Fix the 5 failing REST API tests, commit the
-partial work, and leave AssureCheck fully complete.
+Purpose: **Turn the verified Lodestar engineering core into a runnable, demoable product.**
+This is Sprint 1 of the 4-sprint plan (see `docs/reports/sprint-plan.html`). It delivers the
+P0 "make it run" layer: a runnable desktop app, functional adapters, and the two headline
+differentiators (RiskAI, IntegrateHub) no longer stubs.
 
-Status: **WP-6 DONE** — all 6 AssureCheck suites pass (0 failures), smoke OK, no regressions.
-Committed: 7487b67
-
+Status: **IN PROGRESS**
 Context: Lodestar C++17 CMake monorepo (MSVC/Windows). Build: `cmake --build build --config
 Release` (HARD TIMEOUT). Self-verify: `./build/core/Release/lodestar_smoke.exe`. AssureCheck
-WP-1..WP-6 are DONE and committed (cca2cf3, e501a77, cd32045, 9ed8398, deb215e, 7487b67).
-AssureCheck is COMPLETE.
+WP-1..WP-6 are DONE and committed. TraceLink, ScenarioForge, AssureCheck are the mature core.
 
-## WP-6 state (committed)
-- New: `core/api/AssureCheckApiServer.cpp/h`, `core/assurecheck/DashboardService.cpp/h`,
-  `core/test/wp6_assurecheck_tests.cpp`
-- Modified: `core/CMakeLists.txt`, `core/adapters/HttpClient.cpp`, `core/api/HttpServer.cpp`
-- The build succeeds. All 6 AssureCheck suites pass (0 failures each):
-  `lodestar_wp1..wp6_assurecheck_tests`. Smoke passes; no regressions.
-- All REST API tests PASS: GET /standards, GET /standards/{code}, POST /checks,
-  GET /summary?standard=, GET /dashboard, plus DashboardService unit tests.
+## Sprint 1 scope (from sprint-plan.html)
 
-## Task (single WP)
-Fix the 5 failing REST API tests. Likely causes to investigate (in order):
-1. **Server lifecycle / port reuse** — each test starts its own `HttpServer` on an ephemeral
-   port (`start(0)`). T1/T2 pass but T3/T4/T5 fail, which suggests the first server's port is
-   not released before the next server starts, so the client connects to a stale/closed port.
-   Check `HttpServer::stop()` and ephemeral port allocation.
-2. **Route handling** — verify POST /checks (body parsing), GET /summary (query param
-   `?standard=` parsed into `req.params`), and GET /dashboard are correctly registered and
-   dispatched.
-3. **HttpClient** — verify POST with a JSON body and query-string GET work over the wire.
+| # | Work item | Module | Priority | Effort |
+|---|-----------|--------|----------|--------|
+| S1.1 | Build the desktop Qt app (enable `LODESTAR_BUILD_UI`, wire MainWindow to service API) | Platform | P0 | 6–10 wks |
+| S1.2 | Make adapters functional (real `invoke()` for Skydel + LLM) | Platform | P0 | 6–10 wks |
+| S1.3 | Implement RiskAI first slice (LLM-assisted FMEA/hazard) | Platform | P0 | 6–8 wks |
+| S1.4 | Implement IntegrateHub first slice (cross-disciplinary hub) | Platform | P0 | 4–6 wks |
+| S1.5 | Validate real-time / determinism (benchmarks + HIL smoke) | Platform | P0 | 4–6 wks |
 
-Do NOT weaken the test assertions. Make the feature satisfy them.
+## Phase breakdown (loop phases)
 
-## Acceptance (MET)
-- All 6 AssureCheck suites pass: `lodestar_wp1..wp6_assurecheck_tests` (0 failures each).
-- Smoke passes; no regressions in existing suites.
-- Commit the WP-6 work (AssureCheckApiServer, DashboardService, wp6 tests, CMake,
-  HttpClient/HttpServer changes) as `chore(wp-6): ...`.
-- Update PLAN.md + docs/loop-state.md to mark AssureCheck COMPLETE.
+| Phase | Work item | Status | Committed | Depends on |
+|-------|-----------|--------|-----------|------------|
+| 1 | Desktop app — enable `LODESTAR_BUILD_UI=ON`, wire `MainWindow` to service API so the app opens and shows TraceLink data. Deliverable: runnable desktop app. | NOT STARTED | — | none (core service API exists) |
+| 2 | Functional adapters — real `invoke()` for Skydel + LLM. Deliverable: one end-to-end RF injection (or simulated) + a real LLM call. | NOT STARTED | — | none |
+| 3 | RiskAI first slice — hazard input → LLM call → FMEA table. Deliverable: working LLM-assisted FMEA. | NOT STARTED | — | Phase 2 (LLM adapter) |
+| 4 | IntegrateHub first slice — cross-disciplinary issue/coordination model. Deliverable: working issue/coordination model. | NOT STARTED | — | none |
+| 5 | Real-time / determinism validation — real-time benchmarks + HIL smoke test. Deliverable: recorded benchmark numbers. | NOT STARTED | — | Phase 2 (Skydel adapter) |
+
+## Dependency / Parallelization
+
+**Dependency graph (edges = must finish before dependent starts):**
+
+```
+Phase 1 (Desktop app)   ── independent
+Phase 2 (Adapters)      ── independent  ──┬──▶ Phase 3 (RiskAI, needs LLM adapter)
+Phase 4 (IntegrateHub)  ── independent  └──▶ Phase 5 (RT/determinism, needs Skydel adapter)
+```
+
+**Parallelization groups (run concurrently):**
+
+- **Group A (parallel, independent):** Phase 1, Phase 2, Phase 4. All three touch disjoint
+  areas (UI shell, adapters, IntegrateHub model) and can run in parallel immediately.
+- **Group B (after Phase 2 LLM part):** Phase 3. Cannot start until the LLM adapter has a real
+  `invoke()`/`doComplete()`.
+- **Group C (after Phase 2 Skydel part):** Phase 5. Cannot start until the Skydel adapter has a
+  real `invoke()` for RF injection.
+
+**Critical path:** Phase 2 → Phase 3 and Phase 2 → Phase 5. Phase 2 is the single bottleneck;
+its LLM and Skydel halves can be developed in parallel within the phase. Phase 1 and Phase 4
+are fully off the critical path and can be scheduled anytime.
+
+**Recommended scheduling:** start Phase 1, Phase 2, and Phase 4 together. Kick off Phase 3 as
+soon as the LLM adapter lands, and Phase 5 as soon as the Skydel adapter lands. This keeps all
+engineers busy and minimizes total wall-clock time.
+
+## Definition of done (Sprint 1)
+
+- A runnable desktop app opens and shows TraceLink data.
+- RiskAI produces an FMEA table from a hazard via a real LLM call.
+- One vendor adapter drives a real (or simulated) RF injection.
+- IntegrateHub has a working issue/coordination model.
+- Real-time benchmark numbers are recorded.
 
 ## Working rules
+
 Follow docs/working-rules.md. Build with HARD TIMEOUT, run tests ONE AT A TIME. Only
 devops commits/pushes. Commit as chore(...).
