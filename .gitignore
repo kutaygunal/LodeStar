@@ -40,3 +40,8 @@ venv/
 # IDE
 .vscode/
 .idea/
+
+# local test databases
+*.db
+*.db-wal
+*.db-shm
