@@ -90,7 +90,11 @@ lodestar_add_module(lodestar_assurecheck
     assurecheck/stub.cpp)
 target_link_libraries(lodestar_assurecheck PUBLIC
     lodestar_common lodestar_persistence lodestar_tracelink lodestar_testforge)
-lodestar_add_module(lodestar_riskai        riskai/stub.cpp)
+# --- RiskAI: LLM-assisted FMEA (S1 Phase 3) ---------------------------------
+lodestar_add_module(lodestar_riskai
+    riskai/RiskAiService.cpp)
+target_link_libraries(lodestar_riskai PUBLIC
+    lodestar_common lodestar_adapters)
 # --- IntegrateHub: cross-disciplinary issue/coordination model (S1 Phase 4) ---
 lodestar_add_module(lodestar_integratehub
     integratehub/IntegrateHubService.cpp)
@@ -548,5 +552,17 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_adapters)
     if(WIN32)
         target_link_libraries(lodestar_s1_phase2_tests PRIVATE ws2_32)
+    endif()
+
+    # --- S1 Phase 3: RiskAI first slice (hazard -> LLM -> FMEA) ---------------
+    # Test contract: docs/s1-phase3-test.md (written by scrum-master).
+    add_executable(lodestar_s1_phase3_tests
+        test/s1_phase3_tests.cpp)
+    target_link_libraries(lodestar_s1_phase3_tests PRIVATE
+        lodestar_common
+        lodestar_adapters
+        lodestar_riskai)
+    if(WIN32)
+        target_link_libraries(lodestar_s1_phase3_tests PRIVATE ws2_32)
     endif()
 endif()
