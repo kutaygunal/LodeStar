@@ -29,6 +29,16 @@ public:
     // Executes a single SQL statement (no parameters).
     common::Result<void> execute(const std::string& sql);
 
+    // BEGIN IMMEDIATE: acquires a write lock immediately so a multi-row
+    // mutation (entity+audit, add link, baseline snapshot, import batch) is
+    // atomic and cannot deadlock on a later write. Use with commit()/rollback().
+    common::Result<void> beginImmediate();
+    common::Result<void> commit();
+    common::Result<void> rollback();
+
+    // Returns the first column of the first row of `sql`, or "" if none.
+    std::string queryScalar(const std::string& sql);
+
     // Row id of the most recent successful INSERT.
     long long lastInsertRowId() const;
 

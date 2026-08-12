@@ -601,7 +601,7 @@ common::Result<ValidationRun> RulesEngine::runValidation() {
     std::string finished = now();
 
     // Persist within one transaction.
-    auto begin = db_.execute("BEGIN;");
+    auto begin = db_.execute("BEGIN IMMEDIATE;");
     if (begin.failed()) {
         return common::Result<ValidationRun>::err("BEGIN failed: " + begin.error());
     }

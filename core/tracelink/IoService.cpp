@@ -402,7 +402,7 @@ common::Result<void> IoService::persistBatch(const std::string& format,
     std::string summary = "imported " + std::to_string(report.imported) + " record(s), " +
                           std::to_string(report.errors) + " error(s)";
 
-    auto begin = db_.execute("BEGIN;");
+    auto begin = db_.execute("BEGIN IMMEDIATE;");
     if (begin.failed()) return common::Result<void>::err("BEGIN failed: " + begin.error());
 
     auto insBatch = exec(db_.handle(),

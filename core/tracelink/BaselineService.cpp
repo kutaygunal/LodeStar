@@ -429,7 +429,7 @@ common::Result<Baseline> BaselineService::createBaseline(const std::string& name
     bl.description = description;
     bl.createdAt = now();
 
-    auto begin = db_.execute("BEGIN;");
+    auto begin = db_.execute("BEGIN IMMEDIATE;");
     if (begin.failed()) return common::Result<Baseline>::err("BEGIN failed");
     auto insertBl = exec(db_.handle(),
                          "INSERT INTO baselines (id, name, description, created_by, "

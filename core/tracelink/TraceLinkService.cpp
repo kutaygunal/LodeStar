@@ -313,7 +313,7 @@ void TraceLinkService::setAuditContext(const std::string& actor,
     changeRequestId_ = changeRequestId;
 }
 
-void TraceLinkService::beginTx() { db_.execute("BEGIN;"); }
+void TraceLinkService::beginTx() { db_.execute("BEGIN IMMEDIATE;"); }
 common::Result<void> TraceLinkService::commitTx() { return db_.execute("COMMIT;"); }
 void TraceLinkService::rollbackTx() { db_.execute("ROLLBACK;"); }
 
