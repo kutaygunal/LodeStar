@@ -290,4 +290,30 @@ common::Result<std::optional<TestRun>> TestForgeDao::loadRun(const std::string& 
     return common::Result<std::optional<TestRun>>::ok(std::move(run));
 }
 
+common::Result<std::vector<TestRun>> TestForgeDao::listRuns() {
+    sqlite3_stmt* stmt = nullptr;
+    const char* sql =
+        "SELECT id, procedure_id, procedure_name, scenario_id, status, started_at,"
+        " finished_at FROM test_runs ORDER BY id;";
+    if (sqlite3_prepare_v2(db_.handle(), sql, -1, &stmt, nullptr) != SQLITE_OK) {
+        return common::Result<std::vector<TestRun>>::err(
+            "prepare run list failed: " +
+            std::string(sqlite3_errmsg(db_.handle())));
+    }
+    std::vector<TestRun> out;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        TestRun run;
+        run.id = columnText(stmt, 0);
+        run.procedureId = columnText(stmt, 1);
+        run.procedureName = columnText(stmt, 2);
+        run.scenarioId = columnText(stmt, 3);
+        run.status = parseRunStatus(columnText(stmt, 4));
+        run.startedAt = columnText(stmt, 5);
+        run.finishedAt = columnText(stmt, 6);
+        out.push_back(std::move(run));
+    }
+    sqlite3_finalize(stmt);
+    return common::Result<std::vector<TestRun>>::ok(std::move(out));
+}
+
 }  // namespace lodestar::testforge

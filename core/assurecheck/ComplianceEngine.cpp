@@ -190,6 +190,53 @@ std::string sourceToEntityType(const std::string& source) {
     return "requirement";
 }
 
+// Evaluates the mapped source against an explicit evidence snapshot (WP-3).
+// Returns (status, evidence ids).
+EvalOutcome evaluateSnapshot(const std::string& source,
+                             const EvidenceSnapshot& ev) {
+    EvalOutcome out;
+    if (source == "test_cases") {
+        if (!ev.passedRunIds.empty()) {
+            out.status = CheckStatus::Pass;
+            out.ids = ev.passedRunIds;
+            return out;
+        }
+        if (!ev.passedRunIds.empty() || !ev.failedRunIds.empty() ||
+            !ev.blockedRunIds.empty()) {
+            out.status = CheckStatus::Warning;
+            return out;
+        }
+        out.status = CheckStatus::Fail;
+        return out;
+    }
+    if (source == "trace_links") {
+        if (!ev.traceLinkIds.empty()) {
+            out.status = CheckStatus::Pass;
+            out.ids = ev.traceLinkIds;
+        } else {
+            out.status = CheckStatus::Fail;
+        }
+        return out;
+    }
+    if (source == "design_items") {
+        if (!ev.designIds.empty()) {
+            out.status = CheckStatus::Pass;
+            out.ids = ev.designIds;
+        } else {
+            out.status = CheckStatus::Fail;
+        }
+        return out;
+    }
+    // requirements
+    if (!ev.requirementIds.empty()) {
+        out.status = CheckStatus::Pass;
+        out.ids = ev.requirementIds;
+    } else {
+        out.status = CheckStatus::Fail;
+    }
+    return out;
+}
+
 // Serializes evidence links as "type:id;type:id".
 std::string evidenceToString(const std::vector<EvidenceLink>& ev) {
     std::string out;
@@ -284,6 +331,75 @@ common::Result<std::vector<CheckResult>> ComplianceEngine::runChecks(
 
         // 3. Status.
         EvalOutcome outcome = evaluateSource(db, source);
+        res.status = outcome.status;
+
+        // 4. Evidence links on PASS.
+        if (outcome.status == CheckStatus::Pass) {
+            const std::string type = sourceToEntityType(source);
+            for (const auto& id : outcome.ids) {
+                EvidenceLink link;
+                link.entityType = type;
+                link.entityId = id;
+                res.evidence.push_back(std::move(link));
+            }
+        }
+        results.push_back(std::move(res));
+    }
+    return common::Result<std::vector<CheckResult>>::ok(std::move(results));
+}
+
+common::Result<std::vector<CheckResult>> ComplianceEngine::runChecksWithEvidence(
+    const std::string& standardCode, const std::string& dalLevel,
+    const EvidenceSnapshot& evidence) {
+    sqlite3* db = db_.handle();
+    if (db == nullptr) {
+        return common::Result<std::vector<CheckResult>>::err(
+            "database not open");
+    }
+
+    // Resolve the standard id.
+    auto stdRows = query(db,
+                         "SELECT id FROM assurance_standards WHERE code=?;",
+                         {standardCode}, 1);
+    if (stdRows.failed() || stdRows.value().empty()) {
+        return common::Result<std::vector<CheckResult>>::err(
+            "unknown standard: " + standardCode);
+    }
+    const std::string standardId = stdRows.value().front()[0];
+
+    // Checklist items for the standard, ordered by seq.
+    auto items = query(db,
+                       "SELECT id, item_code, dal_level, evidence "
+                       "FROM assurance_checklist_items "
+                       "WHERE standard_id=? ORDER BY seq;",
+                       {standardId}, 4);
+    if (items.failed()) {
+        return common::Result<std::vector<CheckResult>>::err(items.error());
+    }
+
+    std::vector<CheckResult> results;
+    for (const auto& r : items.value()) {
+        CheckResult res;
+        res.id = newUuid();
+        res.standardCode = standardCode;
+        res.itemId = r[0];
+        res.itemCode = r[1];
+        res.dalLevel = r[2];
+        const std::string evidenceText = r[3];
+
+        // 1. DAL applicability.
+        if (!dalApplies(res.dalLevel, dalLevel)) {
+            res.status = CheckStatus::Na;
+            res.detail = "Not applicable for DAL " + dalLevel;
+            results.push_back(std::move(res));
+            continue;
+        }
+
+        // 2. Evidence source.
+        const std::string source = mapEvidenceSource(evidenceText);
+
+        // 3. Status against the snapshot.
+        EvalOutcome outcome = evaluateSnapshot(source, evidence);
         res.status = outcome.status;
 
         // 4. Evidence links on PASS.

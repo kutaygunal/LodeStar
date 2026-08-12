@@ -83,8 +83,10 @@ target_compile_definitions(lodestar_testforge PRIVATE
 lodestar_add_module(lodestar_assurecheck
     assurecheck/AssureCheckService.cpp
     assurecheck/ComplianceEngine.cpp
+    assurecheck/EvidenceService.cpp
     assurecheck/stub.cpp)
-target_link_libraries(lodestar_assurecheck PUBLIC lodestar_common lodestar_persistence)
+target_link_libraries(lodestar_assurecheck PUBLIC
+    lodestar_common lodestar_persistence lodestar_tracelink lodestar_testforge)
 lodestar_add_module(lodestar_riskai        riskai/stub.cpp)
 lodestar_add_module(lodestar_integratehub  integratehub/stub.cpp)
 
@@ -441,5 +443,20 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_assurecheck)
     target_compile_definitions(lodestar_wp2_assurecheck_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 11 WP-3: AssureCheck evidence + integration (TraceLink/TestForge) ---
+    # Test contract: docs/wp3-assurecheck-task.md (written by scrum-master).
+    # Named lodestar_wp3_assurecheck_tests to avoid clobbering the existing
+    # Phase-1 tracelink lodestar_wp3_tests regression target.
+    add_executable(lodestar_wp3_assurecheck_tests
+        test/wp3_assurecheck_tests.cpp)
+    target_link_libraries(lodestar_wp3_assurecheck_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck
+        lodestar_tracelink
+        lodestar_testforge)
+    target_compile_definitions(lodestar_wp3_assurecheck_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()

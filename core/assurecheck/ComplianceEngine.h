@@ -38,6 +38,19 @@ struct CheckResult {
     std::string detail;
 };
 
+// Project data + test-run results gathered from TraceLink and TestForge.
+// WP-3: runChecksWithEvidence evaluates the checklist against this snapshot
+// instead of reading the raw DB tables directly.
+struct EvidenceSnapshot {
+    std::vector<std::string> requirementIds;  // TraceLink requirements
+    std::vector<std::string> designIds;       // TraceLink design items
+    std::vector<std::string> testCaseIds;     // TraceLink test cases
+    std::vector<std::string> traceLinkIds;    // TraceLink links
+    std::vector<std::string> passedRunIds;    // TestForge runs, status Passed
+    std::vector<std::string> failedRunIds;    // TestForge runs, status Failed
+    std::vector<std::string> blockedRunIds;   // TestForge runs, status Blocked
+};
+
 // Counts of results by status for a standard.
 struct CheckSummary {
     int total = 0;
@@ -57,6 +70,13 @@ public:
     // CheckResult per item (applicable or NA). Does NOT persist.
     common::Result<std::vector<CheckResult>> runChecks(
         const std::string& standardCode, const std::string& dalLevel);
+
+    // Evaluates every checklist item of the given standard against an explicit
+    // evidence snapshot (instead of reading raw DB tables). Same DAL-applicability
+    // and status rules as runChecks. Does NOT persist.
+    common::Result<std::vector<CheckResult>> runChecksWithEvidence(
+        const std::string& standardCode, const std::string& dalLevel,
+        const EvidenceSnapshot& evidence);
 
     // Persists a set of results into assurance_checks. Idempotent: replaces
     // any previously stored results for the same standard (no duplicates).

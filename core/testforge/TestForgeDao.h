@@ -29,6 +29,9 @@ public:
     // Loads a run with its step results; returns nullopt if not found.
     common::Result<std::optional<TestRun>> loadRun(const std::string& id);
 
+    // Returns all saved test runs (any status), ordered by id.
+    common::Result<std::vector<TestRun>> listRuns();
+
 private:
     persistence::Database& db_;
 };
