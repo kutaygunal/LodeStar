@@ -91,7 +91,11 @@ lodestar_add_module(lodestar_assurecheck
 target_link_libraries(lodestar_assurecheck PUBLIC
     lodestar_common lodestar_persistence lodestar_tracelink lodestar_testforge)
 lodestar_add_module(lodestar_riskai        riskai/stub.cpp)
-lodestar_add_module(lodestar_integratehub  integratehub/stub.cpp)
+# --- IntegrateHub: cross-disciplinary issue/coordination model (S1 Phase 4) ---
+lodestar_add_module(lodestar_integratehub
+    integratehub/IntegrateHubService.cpp)
+target_link_libraries(lodestar_integratehub PUBLIC
+    lodestar_common lodestar_persistence)
 
 # --- Adapters (Phase 5): external tool / LLM / Python integration -----------
 lodestar_add_module(lodestar_adapters
@@ -508,4 +512,41 @@ if(LODESTAR_BUILD_TESTS)
     endif()
     target_compile_definitions(lodestar_wp6_assurecheck_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S1 Phase 1: desktop app wiring (Qt-independent data contract) ------
+    # Test contract: docs/s1-phase1-test.md (written by scrum-master).
+    # Verifies the exact data the Qt views consume (refreshAll / projectTree /
+    # detail) without needing a Qt runtime.
+    add_executable(lodestar_s1_phase1_tests
+        test/s1_phase1_tests.cpp)
+    target_link_libraries(lodestar_s1_phase1_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_s1_phase1_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S1 Phase 4: IntegrateHub first slice (issue/coordination model) ------
+    # Test contract: docs/s1-phase4-task.md (written by scrum-master).
+    add_executable(lodestar_s1_phase4_tests
+        test/s1_phase4_tests.cpp)
+    target_link_libraries(lodestar_s1_phase4_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_integratehub)
+    target_compile_definitions(lodestar_s1_phase4_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S1 Phase 2: functional adapters (real Skydel + LLM invoke) -----------
+    # Test contract: docs/s1-phase2-test.md (written by scrum-master).
+    # Makes LlmAdapter::invoke("complete") and SkydelAdapter::invoke() perform
+    # REAL out-of-process HTTP calls (with a simulated Skydel mode for CI).
+    add_executable(lodestar_s1_phase2_tests
+        test/s1_phase2_tests.cpp)
+    target_link_libraries(lodestar_s1_phase2_tests PRIVATE
+        lodestar_common
+        lodestar_adapters)
+    if(WIN32)
+        target_link_libraries(lodestar_s1_phase2_tests PRIVATE ws2_32)
+    endif()
 endif()
