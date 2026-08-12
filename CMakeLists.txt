@@ -25,6 +25,18 @@ endif()
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 # ---------------------------------------------------------------------------
+# Testing
+# ---------------------------------------------------------------------------
+# S3 Phase 2 (CTest wiring): enable_testing() must be called here, in the
+# top-level CMakeLists.txt, for `ctest --test-dir build` run from the build
+# root to discover core/'s registered tests. Calling it only inside
+# core/CMakeLists.txt registers the tests but leaves the top-level
+# CTestTestfile.cmake empty, so `ctest` from the build root finds nothing.
+if(LODESTAR_BUILD_TESTS)
+    enable_testing()
+endif()
+
+# ---------------------------------------------------------------------------
 # Subprojects
 # ---------------------------------------------------------------------------
 add_subdirectory(core)

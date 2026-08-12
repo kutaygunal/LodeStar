@@ -189,6 +189,10 @@ target_compile_definitions(lodestar_smoke PRIVATE
 # Requires TraceLinkService + enriched models + migrations 003/004. Build with
 # -DLODESTAR_BUILD_TESTS=ON once the WP-1 engineer implements the contract.
 if(LODESTAR_BUILD_TESTS)
+    # S3 Phase 2 (CTest wiring): CTest needs enable_testing() in scope before
+    # add_test() calls below take effect / before `ctest` can discover them.
+    enable_testing()
+
     add_executable(lodestar_wp1_tests
         test/wp1_tracelink_tests.cpp)
     target_link_libraries(lodestar_wp1_tests PRIVATE
@@ -801,4 +805,22 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_assurecheck)
     target_compile_definitions(lodestar_s2_phase4_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S3 Phase 2: CTest wiring ---------------------------------------------
+    # Every *_tests target defined above gets registered with CTest instead of
+    # relying solely on ci/run_all_tests.{sh,ps1} to grep exit codes. This is
+    # what makes `ctest --test-dir build -C Release --output-on-failure` (and
+    # JUnit output via --output-junit) work, and what an IDE test explorer or a
+    # CI test-report plugin needs. Discovered by name pattern rather than
+    # hand-listed so a new `lodestar_*_tests` target is picked up automatically.
+    get_property(_lodestar_all_targets DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        PROPERTY BUILDSYSTEM_TARGETS)
+    foreach(_lodestar_t ${_lodestar_all_targets})
+        if(_lodestar_t MATCHES "_tests$")
+            add_test(NAME ${_lodestar_t} COMMAND ${_lodestar_t})
+            set_tests_properties(${_lodestar_t} PROPERTIES TIMEOUT 120)
+        endif()
+    endforeach()
+    unset(_lodestar_all_targets)
+    unset(_lodestar_t)
 endif()

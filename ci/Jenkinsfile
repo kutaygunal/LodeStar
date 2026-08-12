@@ -1,18 +1,29 @@
 // Jenkinsfile
-// Lodestar CI pipeline (S2 Phase 9 - Full CI/CD).
-// Builds with LODESTAR_BUILD_TESTS=ON, runs the test-gate script, and builds a
-// matrix of configurations (Release / Debug). The build FAILS if any test
-// target fails (test gate).
+// Lodestar CI pipeline (S3 Phase 1 - CI/build-platform reconciliation).
+//
+// Lodestar only builds on Windows with MSVC + vcpkg (Visual Studio 17 2022
+// generator, x64-windows triplet - see CMakePresets.json). The pipeline
+// previously used `sh` steps, which cannot run on that platform; it has
+// never actually gone green. This version runs on a Windows agent, uses the
+// `windows` CMake preset (so no machine-specific toolchain path is baked in
+// here - the agent just needs VCPKG_ROOT set), and gates on CTest, which is
+// now wired to every `*_tests` target (S3 Phase 2) and emits JUnit XML that
+// Jenkins can publish as a real test report instead of a pass/fail log line.
+//
+// Requires on the agent: Visual Studio 2022 (MSVC), CMake >= 3.21, and
+// vcpkg cloned + bootstrapped with VCPKG_ROOT pointing at it.
 
 pipeline {
-    agent any
+    agent { label 'windows' }
 
     options {
         timestamps()
         disableConcurrentBuilds()
     }
 
-    // Matrix of at least 2 configurations (S2 Phase 9 contract).
+    // Matrix of at least 2 configurations (build-type parity with the local
+    // dev workflow: Release is what's shipped, Debug is what sanitizers/
+    // slower checks will eventually run against).
     matrix {
         axes {
             axis {
@@ -29,28 +40,33 @@ pipeline {
 
             stage('Configure') {
                 steps {
-                    // Build with tests enabled so the test gate can run.
-                    sh 'cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DLODESTAR_BUILD_TESTS=ON'
+                    bat "cmake --preset windows"
                 }
             }
 
             stage('Build') {
                 steps {
-                    sh 'cmake --build build --config ${BUILD_TYPE}'
+                    bat "cmake --build build --config %BUILD_TYPE%"
                 }
             }
 
             stage('Test gate') {
                 steps {
-                    // Run every *_tests.exe in the build tree; fails on any
-                    // non-zero exit or timeout (ci/run_all_tests.sh).
-                    sh 'ci/run_all_tests.sh build 120'
+                    // Every *_tests target is registered with CTest (S3
+                    // Phase 2). Fails the build on any non-zero exit or
+                    // per-test timeout; JUnit XML is archived below so
+                    // Jenkins shows a real pass/fail test report, not just
+                    // a console log.
+                    bat "ctest --test-dir build -C %BUILD_TYPE% --output-on-failure --output-junit Testing/junit-%BUILD_TYPE%.xml"
                 }
             }
         }
     }
 
     post {
+        always {
+            junit testResults: 'build/Testing/junit-*.xml', allowEmptyResults: true
+        }
         success {
             echo 'Lodestar build + test gate completed successfully.'
         }

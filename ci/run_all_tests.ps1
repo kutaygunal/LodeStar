@@ -6,6 +6,12 @@
 # per-test timeout. The gate FAILS (non-zero exit) if any test binary is
 # missing, times out, or exits non-zero.
 #
+# As of S3 Phase 2, every target here is also registered with CTest, which is
+# the pipeline's actual gate (see ci/Jenkinsfile: `ctest --test-dir build`) -
+# it gets a real pass/fail per test plus JUnit XML for Jenkins to publish.
+# This script is kept as a quick manual/offline runner that doesn't require a
+# CMake test-dir configure step.
+#
 # Usage:
 #   powershell -File ci/run_all_tests.ps1 [-BuildDir <path>] [-TimeoutSecs <n>]
 # ---------------------------------------------------------------------------
