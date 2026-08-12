@@ -16,7 +16,7 @@ Tests: `core/test/wp*_tests.cpp` (all currently pass). Schema: append-only migra
 
 | # | WP | Tasks (from options) | Priority | Status | Assigned to | Tests | Committed |
 |---|-----|----------------------|----------|--------|-------------|-------|-----------|
-| A | Search + pagination | A1 FTS5 full-text search (ranked); B1 pagination (limit/offset) on all list endpoints | High | TODO | - | - | - |
+| A | Search + pagination | A1 FTS5 full-text search (ranked); B1 pagination (limit/offset) on all list endpoints | High | DONE | senior-engineer-wpa | PASS (0 failures) | 7dc71d2 |
 | B | Change management | A3 baseline restore/rollback; A4 change-request + review workflow (approve/reject, review queues, link CRs to audit) | High | TODO | - | - | - |
 | C | Hierarchy tree | A2 requirement hierarchy tree: parent/child navigation, subtree ops, reorder | High | DONE | senior-engineer-wpc | PASS (30/30) | 3d5e4b7 |
 | D | Coverage + evidence | A5 coverage by verification method; A6 DO-178C evidence package export (matrix+coverage+validation+audit bundle) | Med | TODO | - | - | - |
