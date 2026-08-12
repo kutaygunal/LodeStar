@@ -26,7 +26,10 @@ target_compile_definitions(lodestar_persistence PRIVATE
 
 # --- tracelink: graph model backed by persistence --------------------------
 lodestar_add_module(lodestar_tracelink
-    tracelink/TraceGraph.cpp)
+    tracelink/TraceGraph.cpp
+    tracelink/Types.cpp
+    tracelink/StateMachine.cpp
+    tracelink/TraceLinkService.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
 # --- ScenarioForge (real GNSS math, Phase 4) ---------------------------------
@@ -116,7 +119,8 @@ add_executable(lodestar_smoke
     smoke/main.cpp
     smoke/scenario_smoke.cpp
     smoke/adapters_api_smoke.cpp
-    smoke/testforge_smoke.cpp)
+    smoke/testforge_smoke.cpp
+    smoke/tracelink_smoke.cpp)
 target_link_libraries(lodestar_smoke PRIVATE
     lodestar_common
     lodestar_persistence
@@ -131,3 +135,17 @@ endif()
 target_compile_definitions(lodestar_smoke PRIVATE
     LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations"
     LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+# --- WP-1 unit/integration tests (test-first, written by scrum-master) -------
+# Requires TraceLinkService + enriched models + migrations 003/004. Build with
+# -DLODESTAR_BUILD_TESTS=ON once the WP-1 engineer implements the contract.
+if(LODESTAR_BUILD_TESTS)
+    add_executable(lodestar_wp1_tests
+        test/wp1_tracelink_tests.cpp)
+    target_link_libraries(lodestar_wp1_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp1_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+endif()

@@ -20,6 +20,7 @@
 namespace lodestar::scenario { int runScenarioSmoke(); }
 namespace lodestar { int runAdaptersApiSmoke(); }
 namespace lodestar::testforge { int runTestForgeSmoke(); }
+namespace lodestar::tracelink { int runTraceLinkSmoke(); }
 
 #ifndef LODESTAR_MIGRATIONS_DIR
 #define LODESTAR_MIGRATIONS_DIR "core/persistence/migrations"
@@ -144,6 +145,12 @@ int main(int argc, char** argv) {
     int testforgeResult = lodestar::testforge::runTestForgeSmoke();
     if (testforgeResult != 0) {
         return fail("TestForge smoke path failed");
+    }
+
+    // Phase 7 / WP-1: TraceLink rich typed domain model smoke path.
+    int tracelinkResult = lodestar::tracelink::runTraceLinkSmoke();
+    if (tracelinkResult != 0) {
+        return fail("TraceLink WP-1 smoke path failed");
     }
 
     return 0;

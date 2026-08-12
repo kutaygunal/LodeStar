@@ -116,7 +116,7 @@ int runTestForgeSmoke() {
         auto migrated = mig.run(LODESTAR_TESTFORGE_MIGRATIONS_DIR);
         check(migrated.isOk(), "migration runs");
         if (!migrated.isOk()) return 1;
-        check(migrated.value() == 2, "schema migrated to v2");
+        check(migrated.value() >= 4, "schema migrated to v4 (WP-1 migrations applied)");
 
         TestForgeDao dao(db);
 
