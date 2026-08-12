@@ -17,6 +17,8 @@
 #include "core/persistence/MigrationRunner.h"
 #include "core/tracelink/TraceGraph.h"
 
+namespace lodestar::scenario { int runScenarioSmoke(); }
+
 #ifndef LODESTAR_MIGRATIONS_DIR
 #define LODESTAR_MIGRATIONS_DIR "core/persistence/migrations"
 #endif
@@ -123,5 +125,12 @@ int main(int argc, char** argv) {
 
     std::printf("SMOKE OK: schema v%d, trace link insert+query round-trip passed.\n",
                 migrated.value());
+
+    // Phase 4: ScenarioForge real GNSS math smoke path.
+    int scenarioResult = lodestar::scenario::runScenarioSmoke();
+    if (scenarioResult != 0) {
+        return fail("ScenarioForge smoke path failed");
+    }
+
     return 0;
 }
