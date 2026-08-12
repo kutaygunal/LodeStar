@@ -84,6 +84,7 @@ lodestar_add_module(lodestar_assurecheck
     assurecheck/AssureCheckService.cpp
     assurecheck/ComplianceEngine.cpp
     assurecheck/EvidenceService.cpp
+    assurecheck/PerformanceService.cpp
     assurecheck/ReportService.cpp
     assurecheck/stub.cpp)
 target_link_libraries(lodestar_assurecheck PUBLIC
@@ -473,5 +474,18 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_assurecheck
         lodestar_adapters)
     target_compile_definitions(lodestar_wp4_assurecheck_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 11 WP-5: AssureCheck performance + hardening (migration 021) ---
+    # Test contract: docs/wp5-assurecheck-task.md (written by scrum-master).
+    # Named lodestar_wp5_assurecheck_tests to avoid clobbering the existing
+    # Phase-1 tracelink lodestar_wp5_tests regression target.
+    add_executable(lodestar_wp5_assurecheck_tests
+        test/wp5_assurecheck_tests.cpp)
+    target_link_libraries(lodestar_wp5_assurecheck_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck)
+    target_compile_definitions(lodestar_wp5_assurecheck_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
