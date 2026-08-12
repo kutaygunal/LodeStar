@@ -21,7 +21,7 @@ Tests: `core/test/wp*_tests.cpp` (all currently pass). Schema: append-only migra
 | C | Hierarchy tree | A2 requirement hierarchy tree: parent/child navigation, subtree ops, reorder | High | TODO | - | - | - |
 | D | Coverage + evidence | A5 coverage by verification method; A6 DO-178C evidence package export (matrix+coverage+validation+audit bundle) | Med | TODO | - | - | - |
 | E | API + duplicates | A8 REST API auth / API keys; A9 duplicate/similarity detection | Med | TODO | - | - | - |
-| F | Robustness hardening | B2 typed error codes; B3 input validation & size limits; B4 DB backup/restore; B5 migration safety (dry-run/rollback/checksum); B6 fuzz/edge-case tests; B7 concurrency stress test; B8 structured logging | High | DONE | senior-engineer-wpf | PASS (37/37) | cb381d7 |
+| F | Robustness hardening | B2 typed error codes; B3 input validation & size limits; B4 DB backup/restore; B5 migration safety (dry-run/rollback/checksum); B6 fuzz/edge-case tests; B7 concurrency stress test; B8 structured logging | High | DONE | senior-engineer-wpf | PASS (37/37) | bf45a16 |
 | G | Real Qt UI | A7 install Qt, enable LODESTAR_BUILD_UI=ON, wire the 4 views (matrix/graph/impact/coverage) to the service | Med | TODO | - | - | - |
 
 ## Dependency order
