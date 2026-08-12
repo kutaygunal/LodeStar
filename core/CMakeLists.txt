@@ -33,10 +33,15 @@ lodestar_add_module(lodestar_tracelink
     tracelink/TraceLinkService.cpp
     tracelink/BaselineService.cpp
     tracelink/ChangeRequestService.cpp
+    tracelink/ReviewService.cpp
     tracelink/RulesEngine.cpp
     tracelink/IoService.cpp
     tracelink/ViewModelFactory.cpp
-    tracelink/UiWiringService.cpp)
+    tracelink/UiWiringService.cpp
+    tracelink/CoverageService.cpp
+    tracelink/SuspectService.cpp
+    tracelink/ComplianceService.cpp
+    tracelink/RbacService.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
 # --- ScenarioForge (real GNSS math, Phase 4) ---------------------------------
@@ -301,4 +306,56 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_tracelink)
     target_compile_definitions(lodestar_wpG_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-1: suspect-link workflow (migration 013) ---------------
+    add_executable(lodestar_wp1_suspect_tests
+        test/wp1_suspect_tests.cpp)
+    target_link_libraries(lodestar_wp1_suspect_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp1_suspect_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-2: review/comment/approval (migration 014) ------------
+    add_executable(lodestar_wp2_review_tests
+        test/wp2_review_tests.cpp)
+    target_link_libraries(lodestar_wp2_review_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp2_review_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-3: compliance templates/checklists (migration 015) ----
+    add_executable(lodestar_wp3_compliance_tests
+        test/wp3_compliance_tests.cpp)
+    target_link_libraries(lodestar_wp3_compliance_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp3_compliance_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-4: roles/permissions + concurrency (migration 016) ----
+    add_executable(lodestar_wp4_rbac_tests
+        test/wp4_rbac_tests.cpp)
+    target_link_libraries(lodestar_wp4_rbac_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp4_rbac_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-5: TestForge coverage wiring (migration 017 optional) --
+    add_executable(lodestar_wp5_coverage_tests
+        test/wp5_coverage_tests.cpp)
+    target_link_libraries(lodestar_wp5_coverage_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink
+        lodestar_testforge)
+    target_compile_definitions(lodestar_wp5_coverage_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations"
+        LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
