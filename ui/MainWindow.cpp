@@ -14,6 +14,8 @@
 #include "ui/ImpactView.h"
 #include "ui/MatrixView.h"
 #include "ui/ProjectTreeView.h"
+#include "ui/DocumentView.h"
+#include "ui/BaselineDiffView.h"
 
 namespace lodestar::ui {
 
@@ -31,11 +33,17 @@ MainWindow::MainWindow(lodestar::persistence::Database& db, QWidget* parent)
     graph_ = new GraphView(tabs_);
     impact_ = new ImpactView(tabs_);
     dashboard_ = new CoverageDashboardView(tabs_);
+    diff_ = new BaselineDiffView(tabs_);
+    diff_->setWiring(&wiring_);
+    document_ = new DocumentView(wiring_, tabs_);
 
+    matrix_->setWiringService(&wiring_);
     tabs_->addTab(matrix_, "Trace Matrix");
     tabs_->addTab(graph_, "Graph");
     tabs_->addTab(impact_, "Impact");
     tabs_->addTab(dashboard_, "Coverage Dashboard");
+    tabs_->addTab(diff_, "Baseline Diff");
+    tabs_->addTab(document_, "Document");
 
     detail_ = new DetailPanelView(this);
     auto* right = new QSplitter(Qt::Vertical, this);
@@ -83,6 +91,11 @@ void MainWindow::showDetail(lodestar::tracelink::EntityType type,
     }
 }
 
+void MainWindow::showBaselineDiff(const std::string& aId, const std::string& bId,
+                                  const std::string& rollbackBaselineId) {
+    diff_->loadDiff(aId, bId, rollbackBaselineId);
+}
+
 void MainWindow::refresh() {
     // Single-pass refresh through the WP-G wiring service: builds all four
     // view models consistently (matrix rows == coverage items == number of
@@ -94,6 +107,12 @@ void MainWindow::refresh() {
     matrix_->setModel(s.matrix);
     graph_->setModel(s.graph);
     dashboard_->setModel(s.coverage);
+
+    // WP-7: live coverage dashboard (red/green gaps) + charts.
+    auto live = wiring_.liveCoverage();
+    if (live.isOk()) dashboard_->setLiveCoverage(live.value());
+    auto charts = wiring_.coverageCharts();
+    if (charts.isOk()) dashboard_->setCharts(charts.value());
 
     // Impact view needs a focus entity; default to the first requirement.
     if (!s.impacts.empty()) impact_->setModel(s.impacts.front());

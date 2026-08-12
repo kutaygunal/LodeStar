@@ -24,6 +24,8 @@ if(QT_PKG)
         CoverageDashboardView.cpp
         ProjectTreeView.cpp
         DetailPanelView.cpp
+        BaselineDiffView.cpp
+        DocumentView.cpp
         MainWindow.cpp)
     target_link_libraries(lodestar_ui PUBLIC
         ${QT_PKG}::Widgets

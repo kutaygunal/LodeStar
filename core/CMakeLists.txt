@@ -370,4 +370,46 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_tracelink)
     target_compile_definitions(lodestar_wp6_ui_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-7: coverage dashboard + charts (needs WP-5 + WP-6) ---
+    add_executable(lodestar_wp7_dashboard_tests
+        test/wp7_dashboard_tests.cpp)
+    target_link_libraries(lodestar_wp7_dashboard_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink
+        lodestar_testforge)
+    target_compile_definitions(lodestar_wp7_dashboard_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations"
+        LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-8: interactive traceability matrix -------------------
+    add_executable(lodestar_wp8_matrix_tests
+        test/wp8_matrix_tests.cpp)
+    target_link_libraries(lodestar_wp8_matrix_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp8_matrix_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-9: baseline visual diff + rollback -------------------
+    add_executable(lodestar_wp9_diff_tests
+        test/wp9_diff_tests.cpp)
+    target_link_libraries(lodestar_wp9_diff_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp9_diff_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 10 WP-10: document-style authoring -------------------------
+    add_executable(lodestar_wp10_doc_tests
+        test/wp10_doc_tests.cpp)
+    target_link_libraries(lodestar_wp10_doc_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp10_doc_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()

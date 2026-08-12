@@ -20,6 +20,8 @@ class ImpactView;
 class CoverageDashboardView;
 class ProjectTreeView;
 class DetailPanelView;
+class DocumentView;
+class BaselineDiffView;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -30,6 +32,10 @@ public:
 
     // Populates the right-side detail panel for one entity.
     void showDetail(lodestar::tracelink::EntityType type, const std::string& id);
+
+    // Loads the baseline visual compare into the BaselineDiffView tab.
+    void showBaselineDiff(const std::string& aId, const std::string& bId,
+                          const std::string& rollbackBaselineId);
 
 private slots:
     void refresh();
@@ -46,6 +52,8 @@ private:
     ImpactView* impact_;
     CoverageDashboardView* dashboard_;
     DetailPanelView* detail_;
+    DocumentView* document_;
+    BaselineDiffView* diff_;
 };
 
 }  // namespace lodestar::ui
