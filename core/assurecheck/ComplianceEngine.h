@@ -49,6 +49,9 @@ struct EvidenceSnapshot {
     std::vector<std::string> passedRunIds;    // TestForge runs, status Passed
     std::vector<std::string> failedRunIds;    // TestForge runs, status Failed
     std::vector<std::string> blockedRunIds;   // TestForge runs, status Blocked
+    // S2 Phase 4: objective-specific semantic evidence.
+    std::vector<std::string> coverageEvidenceIds;  // coverage evidence
+    std::vector<std::string> approvedReviewIds;    // approved reviews (Phase 3)
 };
 
 // Counts of results by status for a standard.
@@ -77,6 +80,18 @@ public:
     common::Result<std::vector<CheckResult>> runChecksWithEvidence(
         const std::string& standardCode, const std::string& dalLevel,
         const EvidenceSnapshot& evidence);
+
+    // S2 Phase 4: objective-specific semantic evidence evaluation. Classifies
+    // the objective's semantic type (traceability | verification | coverage |
+    // review) and returns a status based on the objective's MEANING, not just
+    // "any row exists":
+    //   - traceability -> a trace link must exist.
+    //   - verification -> a passed test run must exist.
+    //   - coverage     -> coverage evidence must exist.
+    //   - review       -> an approved review must exist.
+    // Unclassified objectives fall back to "any evidence exists".
+    common::Result<CheckStatus> evaluateObjective(
+        const std::string& objective, const EvidenceSnapshot& evidence);
 
     // Persists a set of results into assurance_checks. Idempotent: replaces
     // any previously stored results for the same standard (no duplicates).

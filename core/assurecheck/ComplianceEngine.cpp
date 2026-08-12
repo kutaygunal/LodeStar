@@ -11,11 +11,13 @@
 
 #include <sqlite3.h>
 
+#include "core/common/Time.h"
 #include "core/common/Uuid.h"
 
 namespace lodestar::assurecheck {
 
 using lodestar::common::newUuid;
+using lodestar::common::nowIso;
 
 namespace {
 
@@ -188,6 +190,67 @@ std::string sourceToEntityType(const std::string& source) {
     if (source == "trace_links") return "trace_link";
     if (source == "design_items") return "design";
     return "requirement";
+}
+
+// S2 Phase 4: the semantic type of an objective, derived from its meaning.
+enum class ObjectiveType { Traceability, Verification, Coverage, Review, Other };
+
+// Classifies an objective's semantic type from its text (case-insensitive).
+// Priority: traceability > coverage > review > verification > other.
+ObjectiveType classifyObjective(const std::string& objective) {
+    const std::string o = toLower(objective);
+    if (contains(o, "traceab")) return ObjectiveType::Traceability;
+    if (contains(o, "coverage")) return ObjectiveType::Coverage;
+    if (contains(o, "review") || contains(o, "approv")) {
+        return ObjectiveType::Review;
+    }
+    if (contains(o, "verif") || contains(o, "test") ||
+        contains(o, "robust")) {
+        return ObjectiveType::Verification;
+    }
+    return ObjectiveType::Other;
+}
+
+// True if the snapshot carries any evidence at all (fallback for unclassified
+// objectives).
+bool anyEvidence(const EvidenceSnapshot& ev) {
+    return !ev.requirementIds.empty() || !ev.designIds.empty() ||
+           !ev.testCaseIds.empty() || !ev.traceLinkIds.empty() ||
+           !ev.passedRunIds.empty() || !ev.failedRunIds.empty() ||
+           !ev.blockedRunIds.empty() || !ev.coverageEvidenceIds.empty() ||
+           !ev.approvedReviewIds.empty();
+}
+
+// Builds the evidence links that satisfy a PASS for the given objective type.
+std::vector<EvidenceLink> evidenceLinksForObjective(ObjectiveType type,
+                                                    const EvidenceSnapshot& ev) {
+    std::vector<EvidenceLink> out;
+    auto push = [&out](const std::string& typeName,
+                       const std::vector<std::string>& ids) {
+        for (const auto& id : ids) {
+            EvidenceLink l;
+            l.entityType = typeName;
+            l.entityId = id;
+            out.push_back(std::move(l));
+        }
+    };
+    switch (type) {
+        case ObjectiveType::Traceability:
+            push("trace_link", ev.traceLinkIds);
+            break;
+        case ObjectiveType::Verification:
+            push("test_case", ev.passedRunIds);
+            break;
+        case ObjectiveType::Coverage:
+            push("coverage", ev.coverageEvidenceIds);
+            break;
+        case ObjectiveType::Review:
+            push("review", ev.approvedReviewIds);
+            break;
+        default:
+            break;
+    }
+    return out;
 }
 
 // Evaluates the mapped source against an explicit evidence snapshot (WP-3).
@@ -369,10 +432,10 @@ common::Result<std::vector<CheckResult>> ComplianceEngine::runChecksWithEvidence
 
     // Checklist items for the standard, ordered by seq.
     auto items = query(db,
-                       "SELECT id, item_code, dal_level, evidence "
+                       "SELECT id, item_code, dal_level, evidence, objective "
                        "FROM assurance_checklist_items "
                        "WHERE standard_id=? ORDER BY seq;",
-                       {standardId}, 4);
+                       {standardId}, 5);
     if (items.failed()) {
         return common::Result<std::vector<CheckResult>>::err(items.error());
     }
@@ -386,6 +449,7 @@ common::Result<std::vector<CheckResult>> ComplianceEngine::runChecksWithEvidence
         res.itemCode = r[1];
         res.dalLevel = r[2];
         const std::string evidenceText = r[3];
+        const std::string objectiveText = r[4];
 
         // 1. DAL applicability.
         if (!dalApplies(res.dalLevel, dalLevel)) {
@@ -395,26 +459,87 @@ common::Result<std::vector<CheckResult>> ComplianceEngine::runChecksWithEvidence
             continue;
         }
 
-        // 2. Evidence source.
-        const std::string source = mapEvidenceSource(evidenceText);
+        // 2. Objective-specific semantic type (S2 Phase 4).
+        const ObjectiveType otype = classifyObjective(objectiveText);
 
-        // 3. Status against the snapshot.
-        EvalOutcome outcome = evaluateSnapshot(source, evidence);
-        res.status = outcome.status;
-
-        // 4. Evidence links on PASS.
-        if (outcome.status == CheckStatus::Pass) {
-            const std::string type = sourceToEntityType(source);
-            for (const auto& id : outcome.ids) {
-                EvidenceLink link;
-                link.entityType = type;
-                link.entityId = id;
-                res.evidence.push_back(std::move(link));
+        // 3. Status against the snapshot, based on the objective's meaning.
+        CheckStatus status;
+        switch (otype) {
+            case ObjectiveType::Traceability:
+                status = evidence.traceLinkIds.empty() ? CheckStatus::Fail
+                                                       : CheckStatus::Pass;
+                break;
+            case ObjectiveType::Coverage:
+                status = evidence.coverageEvidenceIds.empty()
+                             ? CheckStatus::Fail
+                             : CheckStatus::Pass;
+                break;
+            case ObjectiveType::Review:
+                status = evidence.approvedReviewIds.empty()
+                             ? CheckStatus::Fail
+                             : CheckStatus::Pass;
+                break;
+            case ObjectiveType::Verification:
+                if (!evidence.passedRunIds.empty()) {
+                    status = CheckStatus::Pass;
+                } else if (!evidence.failedRunIds.empty() ||
+                           !evidence.blockedRunIds.empty()) {
+                    status = CheckStatus::Warning;  // runs exist, none passed
+                } else {
+                    status = CheckStatus::Fail;
+                }
+                break;
+            default: {  // Other: fall back to evidence-source mapping.
+                const std::string source = mapEvidenceSource(evidenceText);
+                EvalOutcome outcome = evaluateSnapshot(source, evidence);
+                status = outcome.status;
+                if (outcome.status == CheckStatus::Pass) {
+                    const std::string type = sourceToEntityType(source);
+                    for (const auto& id : outcome.ids) {
+                        EvidenceLink link;
+                        link.entityType = type;
+                        link.entityId = id;
+                        res.evidence.push_back(std::move(link));
+                    }
+                }
+                break;
             }
+        }
+        res.status = status;
+
+        // 4. Evidence links on PASS for the objective-specific types.
+        if (status == CheckStatus::Pass && otype != ObjectiveType::Other) {
+            res.evidence = evidenceLinksForObjective(otype, evidence);
         }
         results.push_back(std::move(res));
     }
     return common::Result<std::vector<CheckResult>>::ok(std::move(results));
+}
+
+common::Result<CheckStatus> ComplianceEngine::evaluateObjective(
+    const std::string& objective, const EvidenceSnapshot& evidence) {
+    const ObjectiveType otype = classifyObjective(objective);
+    switch (otype) {
+        case ObjectiveType::Traceability:
+            return common::Result<CheckStatus>::ok(
+                evidence.traceLinkIds.empty() ? CheckStatus::Fail
+                                              : CheckStatus::Pass);
+        case ObjectiveType::Coverage:
+            return common::Result<CheckStatus>::ok(
+                evidence.coverageEvidenceIds.empty() ? CheckStatus::Fail
+                                                     : CheckStatus::Pass);
+        case ObjectiveType::Review:
+            return common::Result<CheckStatus>::ok(
+                evidence.approvedReviewIds.empty() ? CheckStatus::Fail
+                                                   : CheckStatus::Pass);
+        case ObjectiveType::Verification:
+            return common::Result<CheckStatus>::ok(
+                evidence.passedRunIds.empty() ? CheckStatus::Fail
+                                              : CheckStatus::Pass);
+        default:
+            return common::Result<CheckStatus>::ok(
+                anyEvidence(evidence) ? CheckStatus::Pass : CheckStatus::Fail);
+    }
 }
 
 common::Result<void> ComplianceEngine::storeResults(
@@ -442,7 +567,7 @@ common::Result<void> ComplianceEngine::storeResults(
                     {standardId});
     if (del.failed()) return del;
 
-    const std::string now = "now";
+    const std::string now = nowIso();
     for (const auto& res : results) {
         auto ins = exec(db,
                         "INSERT INTO assurance_checks "

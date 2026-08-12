@@ -1,7 +1,8 @@
 // Jenkinsfile
-// Lodestar CI pipeline skeleton (Phase 2).
-// Pipeline shape for this loop: checkout -> build -> self-verify.
-// No test agents in this loop; verification is build + smoke run.
+// Lodestar CI pipeline (S2 Phase 9 - Full CI/CD).
+// Builds with LODESTAR_BUILD_TESTS=ON, runs the test-gate script, and builds a
+// matrix of configurations (Release / Debug). The build FAILS if any test
+// target fails (test gate).
 
 pipeline {
     agent any
@@ -11,39 +12,50 @@ pipeline {
         disableConcurrentBuilds()
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                checkout scm
+    // Matrix of at least 2 configurations (S2 Phase 9 contract).
+    matrix {
+        axes {
+            axis {
+                name 'BUILD_TYPE'
+                values 'Release', 'Debug'
             }
         }
-
-        stage('Configure') {
-            steps {
-                sh 'cmake -B build -DCMAKE_BUILD_TYPE=Release'
+        stages {
+            stage('Checkout') {
+                steps {
+                    checkout scm
+                }
             }
-        }
 
-        stage('Build') {
-            steps {
-                sh 'cmake --build build --config Release'
+            stage('Configure') {
+                steps {
+                    // Build with tests enabled so the test gate can run.
+                    sh 'cmake -S . -B build -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -DLODESTAR_BUILD_TESTS=ON'
+                }
             }
-        }
 
-        stage('Self-verify') {
-            steps {
-                // Build + smoke run only (no test agents in this loop).
-                echo 'Self-verify: build succeeded. Smoke path added in Phase 3.'
+            stage('Build') {
+                steps {
+                    sh 'cmake --build build --config ${BUILD_TYPE}'
+                }
+            }
+
+            stage('Test gate') {
+                steps {
+                    // Run every *_tests.exe in the build tree; fails on any
+                    // non-zero exit or timeout (ci/run_all_tests.sh).
+                    sh 'ci/run_all_tests.sh build 120'
+                }
             }
         }
     }
 
     post {
         success {
-            echo 'Lodestar build pipeline completed successfully.'
+            echo 'Lodestar build + test gate completed successfully.'
         }
         failure {
-            echo 'Lodestar build pipeline failed.'
+            echo 'Lodestar build or test gate failed.'
         }
     }
 }

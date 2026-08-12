@@ -19,13 +19,17 @@
 
 #include "core/adapters/AdapterRegistry.h"
 #include "core/api/HttpServer.h"
+#include "core/persistence/Database.h"
 #include "core/scenario/Scenario.h"
+#include "core/tracelink/UserService.h"
 
 namespace lodestar::api {
 
 class ApiServer {
 public:
-    ApiServer(lodestar::adapters::AdapterRegistry& registry, int version = 1);
+    // When `db` is non-null, the /auth and /users REST surface is registered.
+    ApiServer(lodestar::adapters::AdapterRegistry& registry, int version = 1,
+              lodestar::persistence::Database* db = nullptr);
 
     // Register the routes on the given server.
     void setup(HttpServer& server);
@@ -38,6 +42,15 @@ private:
     HttpResponse scenarioSatellites(const HttpRequest& req) const;
     HttpResponse scenarioStep(const HttpRequest& req);
 
+    // S2 Phase 1 auth + user endpoints.
+    HttpResponse authRegister(const HttpRequest& req);
+    HttpResponse authLogin(const HttpRequest& req);
+    HttpResponse authLogout(const HttpRequest& req);
+    HttpResponse authMe(const HttpRequest& req);
+    HttpResponse listUsers(const HttpRequest& req);
+    HttpResponse changeUserRole(const HttpRequest& req);
+    HttpResponse updateEntity(const HttpRequest& req);
+
     // Build a default 6-satellite GPS scenario and remember its PRNs.
     void buildDefaultScenario();
 
@@ -47,6 +60,10 @@ private:
     std::vector<int> prns_;
     double sow_ = 0.0;
     int stepCount_ = 0;
+
+    // S2 Phase 1: optional user/auth surface (null when no DB is provided).
+    lodestar::persistence::Database* db_ = nullptr;
+    std::unique_ptr<lodestar::tracelink::UserService> users_;
 };
 
 }  // namespace lodestar::api

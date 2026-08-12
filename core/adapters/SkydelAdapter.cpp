@@ -47,7 +47,8 @@ Json SkydelAdapter::requireConnected(const std::string& op) {
 }
 
 Json SkydelAdapter::invoke(const std::string& op, const Json& params) {
-    if (op != "start" && op != "stop" && op != "setConstellation") {
+    if (op != "start" && op != "stop" && op != "setConstellation" &&
+        op != "measure") {
         throw AdapterError(AdapterError::Code::Unsupported,
                            "skydel adapter: unsupported op '" + op + "'");
     }
@@ -67,6 +68,18 @@ Json SkydelAdapter::invoke(const std::string& op, const Json& params) {
         vendor["message"] = Json::string("simulated");
         if (op == "setConstellation" && params.has("constellation")) {
             vendor["constellation"] = params.at("constellation");
+        }
+        if (op == "measure") {
+            // Deterministic simulated measurement (metres). A caller may
+            // override the value via params["value"]; otherwise a fixed
+            // plausible value is reported so the RF-injection path can be
+            // exercised end-to-end in CI without hardware.
+            double value = 1.5;
+            if (params.has("value") && params.at("value").isNumber()) {
+                value = params.at("value").asNumber();
+            }
+            vendor["value"] = Json::number(value);
+            vendor["unit"] = Json::string("m");
         }
         out["vendor"] = vendor;
         return out;

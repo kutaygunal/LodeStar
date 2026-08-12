@@ -11,7 +11,8 @@ lodestar_add_module(lodestar_common
     common/Logger.cpp
     common/Config.cpp
     common/Uuid.cpp
-    common/Version.cpp)
+    common/Version.cpp
+    common/Sha256.cpp)
 target_compile_definitions(lodestar_common PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 # --- persistence: SQLite schema + DAOs + migration runner ------------------
@@ -41,7 +42,10 @@ lodestar_add_module(lodestar_tracelink
     tracelink/CoverageService.cpp
     tracelink/SuspectService.cpp
     tracelink/ComplianceService.cpp
-    tracelink/RbacService.cpp)
+    tracelink/RbacService.cpp
+    tracelink/UserService.cpp
+    tracelink/OslcService.cpp
+    tracelink/VariantService.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
 # --- ScenarioForge (real GNSS math, Phase 4) ---------------------------------
@@ -68,7 +72,11 @@ lodestar_add_module(lodestar_scenario
     scenario/sbas/SbasMessage.cpp
     scenario/sbas/SbasCorrections.cpp
     scenario/sbas/Integrity.cpp
-    scenario/Scenario.cpp)
+    scenario/Scenario.cpp
+    scenario/Baseband.cpp
+    scenario/AutomationApi.cpp
+    scenario/Trajectory.cpp
+    scenario/RfImpairments.cpp)
 target_link_libraries(lodestar_scenario PUBLIC lodestar_common)
 
 # --- Stub modules (empty libraries that compile) ----------------------------
@@ -76,23 +84,29 @@ lodestar_add_module(lodestar_testforge
     testforge/TestForgeDao.cpp
     testforge/PlanGenerator.cpp
     testforge/TestRunner.cpp
-    testforge/ReportGenerator.cpp)
-target_link_libraries(lodestar_testforge PUBLIC lodestar_common lodestar_persistence)
+    testforge/ReportGenerator.cpp
+    testforge/Coverage.cpp
+    testforge/SkydelMeasurementProvider.cpp)
+target_link_libraries(lodestar_testforge PUBLIC lodestar_common lodestar_persistence lodestar_adapters)
 target_compile_definitions(lodestar_testforge PRIVATE
     LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 lodestar_add_module(lodestar_assurecheck
     assurecheck/AssureCheckService.cpp
     assurecheck/ComplianceEngine.cpp
     assurecheck/EvidenceService.cpp
+    assurecheck/WorkflowService.cpp
     assurecheck/PerformanceService.cpp
     assurecheck/ReportService.cpp
+    assurecheck/CertReportService.cpp
     assurecheck/DashboardService.cpp
+    assurecheck/TemplateService.cpp
     assurecheck/stub.cpp)
 target_link_libraries(lodestar_assurecheck PUBLIC
     lodestar_common lodestar_persistence lodestar_tracelink lodestar_testforge)
 # --- RiskAI: LLM-assisted FMEA (S1 Phase 3) ---------------------------------
 lodestar_add_module(lodestar_riskai
-    riskai/RiskAiService.cpp)
+    riskai/RiskAiService.cpp
+    riskai/RequirementQualityService.cpp)
 target_link_libraries(lodestar_riskai PUBLIC
     lodestar_common lodestar_adapters)
 # --- IntegrateHub: cross-disciplinary issue/coordination model (S1 Phase 4) ---
@@ -123,12 +137,14 @@ lodestar_add_module(lodestar_api
     api/ApiServer.cpp
     api/ApiKeyService.cpp
     api/TraceLinkApiServer.cpp
-    api/AssureCheckApiServer.cpp)
+    api/AssureCheckApiServer.cpp
+    api/WebServer.cpp)
 target_link_libraries(lodestar_api PUBLIC
     lodestar_common
     lodestar_adapters
     lodestar_scenario
-    lodestar_tracelink)
+    lodestar_tracelink
+    lodestar_assurecheck)
 if(WIN32)
     target_link_libraries(lodestar_api PUBLIC ws2_32)
 endif()
@@ -578,5 +594,211 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_tracelink)
     target_compile_definitions(lodestar_s1_phase5_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 5: TestForge test-case design intelligence ------------------
+    # Test contract: docs/s2-phase5-test.md (written by scrum-master).
+    # Equivalence-class + boundary-value derivation from a requirement/objective
+    # and concrete test-case generation (replaces the thin checks->steps copier).
+    add_executable(lodestar_s2_phase5_tests
+        test/s2_phase5_tests.cpp)
+    target_link_libraries(lodestar_s2_phase5_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_testforge)
+    target_compile_definitions(lodestar_s2_phase5_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 6: wire functional RF adapters into TestForge execution ------
+    # Test contract: docs/s2-phase6-test.md (written by scrum-master).
+    # Connects SkydelAdapter::invoke() to IMeasurementProvider so a TestForge run
+    # drives the RF adapter (simulate mode for CI) and records the measurement.
+    add_executable(lodestar_s2_phase6_tests
+        test/s2_phase6_tests.cpp)
+    target_link_libraries(lodestar_s2_phase6_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_testforge
+        lodestar_adapters)
+    target_compile_definitions(lodestar_s2_phase6_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 3: AssureCheck workflow + audit + evidence package ----------
+    # Test contract: docs/s2-phase3-test.md (written by scrum-master).
+    # Review/approval/sign-off with real timestamps/actors (fixes the "now"
+    # placeholder), audit trail, and objective->evidence package (migration 024).
+    add_executable(lodestar_s2_phase3_tests
+        test/s2_phase3_tests.cpp)
+    target_link_libraries(lodestar_s2_phase3_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck)
+    target_compile_definitions(lodestar_s2_phase3_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    add_executable(lodestar_s2_phase1_tests
+        test/s2_phase1_tests.cpp)
+    target_link_libraries(lodestar_s2_phase1_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_s2_phase1_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 2: web / browser read-review layer over the REST API ------
+    # Test contract: docs/s2-phase2-test.md (written by scrum-master).
+    # Serves a browser UI over the REST API: /web/, /web/requirements,
+    # /web/trace, /web/assure. Auth-aware (honors Phase 1 login/roles).
+    add_executable(lodestar_s2_phase2_tests
+        test/s2_phase2_tests.cpp)
+    target_link_libraries(lodestar_s2_phase2_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_api)
+    target_compile_definitions(lodestar_s2_phase2_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 8: certification-ready reporting + traceability -----------
+    # Test contract: docs/s2-phase8-test.md (written by scrum-master).
+    # PDF / Word (docx) / ReQIF export + result->requirement traceability.
+    add_executable(lodestar_s2_phase8_tests
+        test/s2_phase8_tests.cpp)
+    target_link_libraries(lodestar_s2_phase8_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck
+        lodestar_testforge
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_s2_phase8_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 9: Full CI/CD (persistence regression gate) ---------------
+    # Test contract: docs/s2-phase9-test.md (written by scrum-master).
+    # The phase target links lodestar_common + lodestar_persistence and acts as
+    # a regression gate verifying the persistence layer (the foundation every
+    # CI test target depends on) is healthy: migrations, DAO CRUD, backup/
+    # restore, and transaction atomicity.
+    add_executable(lodestar_s2_phase9_tests
+        test/s2_phase9_tests.cpp)
+    target_link_libraries(lodestar_s2_phase9_tests PRIVATE
+        lodestar_common
+        lodestar_persistence)
+    target_compile_definitions(lodestar_s2_phase9_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 10: commercial packaging (license/installer/docs/support) ---
+    # Test contract: docs/s2-phase10-test.md (written by scrum-master).
+    # Verifies the commercial packaging deliverables exist and are non-empty:
+    # LICENSE.md, packaging/installer.ps1, docs/user-guide.md, docs/support.md.
+    add_executable(lodestar_s2_phase10_tests
+        test/s2_phase10_tests.cpp)
+    target_link_libraries(lodestar_s2_phase10_tests PRIVATE
+        lodestar_common
+        lodestar_persistence)
+    target_compile_definitions(lodestar_s2_phase10_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 12: OSLC integration (provider + consumer) ------------------
+    # Test contract: docs/s2-phase12-test.md (written by scrum-master).
+    # Exposes requirements as OSLC RM resources (RDF/XML, dcterms + oslc_rm) and
+    # imports OSLC requirement resources into the local TraceLink model.
+    add_executable(lodestar_s2_phase12_tests
+        test/s2_phase12_tests.cpp)
+    target_link_libraries(lodestar_s2_phase12_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_s2_phase12_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 13: AI quality scoring on requirements ----------------------
+    # Test contract: docs/s2-phase13-test.md (written by scrum-master).
+    # Builds on duplicate detection + the functional LLM adapter. The quality
+    # scorer lives in the lodestar_riskai module (LLM-assisted analysis).
+    add_executable(lodestar_s2_phase13_tests
+        test/s2_phase13_tests.cpp)
+    target_link_libraries(lodestar_s2_phase13_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink
+        lodestar_riskai)
+    target_compile_definitions(lodestar_s2_phase13_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 11: ScenarioForge baseband + automation API ---------------
+    # Test contract: docs/s2-phase11-test.md (written by scrum-master).
+    # Software-defined baseband (I/Q sample generation) + SCPI-style
+    # remote-control automation API (start/stop/configure scenario generation).
+    add_executable(lodestar_s2_phase11_tests
+        test/s2_phase11_tests.cpp)
+    target_link_libraries(lodestar_s2_phase11_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_scenario)
+    target_compile_definitions(lodestar_s2_phase11_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 14: ScenarioForge trajectory + multipath/interference ------
+    # Test contract: docs/s2-phase14-test.md (written by scrum-master).
+    # Waypoint-based 6-DOF trajectory engine + RF impairments (multipath and
+    # interference) applied to the baseband I/Q samples.
+    add_executable(lodestar_s2_phase14_tests
+        test/s2_phase14_tests.cpp)
+    target_link_libraries(lodestar_s2_phase14_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_scenario)
+    target_compile_definitions(lodestar_s2_phase14_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 16: variants / branching (product-line engineering) --------
+    # Test contract: docs/s2-phase16-test.md (written by scrum-master).
+    # Product variants (Base/Pro/Avionics) + branching with conflict detection
+    # (migration 025).
+    add_executable(lodestar_s2_phase16_tests
+        test/s2_phase16_tests.cpp)
+    target_link_libraries(lodestar_s2_phase16_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_s2_phase16_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 7: structural code coverage (statement/decision/MC/DC) ------
+    # Test contract: docs/s2-phase7-test.md (written by scrum-master).
+    # Statement/decision/MC/DC coverage percentages + persistence (migration 026).
+    add_executable(lodestar_s2_phase7_tests
+        test/s2_phase7_tests.cpp)
+    target_link_libraries(lodestar_s2_phase7_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_testforge)
+    target_compile_definitions(lodestar_s2_phase7_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 15: guided compliance templates/checklists ------------------
+    # Test contract: docs/s2-phase15-test.md (written by scrum-master).
+    # OOTB ARP4754A/DO-178C guided templates with per-item status + progress
+    # tracking (migration 027).
+    add_executable(lodestar_s2_phase15_tests
+        test/s2_phase15_tests.cpp)
+    target_link_libraries(lodestar_s2_phase15_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck)
+    target_compile_definitions(lodestar_s2_phase15_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- S2 Phase 4: AssureCheck semantic evidence evaluation ------------------
+    # Test contract: docs/s2-phase4-test.md (written by scrum-master).
+    # Replaces the heuristic "row exists" PASS with objective-specific semantic
+    # evaluation rules (traceability/verification/coverage/review).
+    add_executable(lodestar_s2_phase4_tests
+        test/s2_phase4_tests.cpp)
+    target_link_libraries(lodestar_s2_phase4_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck)
+    target_compile_definitions(lodestar_s2_phase4_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
