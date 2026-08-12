@@ -6,7 +6,7 @@
 #include <QMainWindow>
 
 #include "core/persistence/Database.h"
-#include "core/tracelink/ViewModelFactory.h"
+#include "core/tracelink/UiWiringService.h"
 
 class QTabWidget;
 class QToolBar;
@@ -30,7 +30,7 @@ private slots:
 
 private:
     lodestar::persistence::Database& db_;
-    lodestar::tracelink::ViewModelFactory factory_;
+    lodestar::tracelink::UiWiringService wiring_;
 
     QTabWidget* tabs_;
     MatrixView* matrix_;

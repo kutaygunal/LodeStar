@@ -6,6 +6,7 @@
 
 #include <QFile>
 #include <QFileDialog>
+#include <QHeaderView>
 #include <QMessageBox>
 #include <QPushButton>
 #include <QToolBar>

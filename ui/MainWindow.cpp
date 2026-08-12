@@ -15,7 +15,7 @@
 namespace lodestar::ui {
 
 MainWindow::MainWindow(lodestar::persistence::Database& db, QWidget* parent)
-    : QMainWindow(parent), db_(db), factory_(db) {
+    : QMainWindow(parent), db_(db), wiring_(db) {
     setWindowTitle("Lodestar — Trace Link");
     resize(1100, 700);
 
@@ -47,22 +47,19 @@ MainWindow::MainWindow(lodestar::persistence::Database& db, QWidget* parent)
 void MainWindow::refreshAll() { refresh(); }
 
 void MainWindow::refresh() {
-    auto m = factory_.matrix();
-    if (m.isOk()) matrix_->setModel(m.value());
+    // Single-pass refresh through the WP-G wiring service: builds all four
+    // view models consistently (matrix rows == coverage items == number of
+    // requirements; graph nodes == all active entities).
+    auto snap = wiring_.refreshAll();
+    if (!snap.isOk()) return;
+    const auto& s = snap.value();
 
-    auto g = factory_.graph();
-    if (g.isOk()) graph_->setModel(g.value());
-
-    auto d = factory_.coverageDashboard();
-    if (d.isOk()) dashboard_->setModel(d.value());
+    matrix_->setModel(s.matrix);
+    graph_->setModel(s.graph);
+    dashboard_->setModel(s.coverage);
 
     // Impact view needs a focus entity; default to the first requirement.
-    auto firstReq = factory_.matrix();
-    if (firstReq.isOk() && !firstReq.value().rows.empty()) {
-        auto imp = factory_.impact(lodestar::tracelink::EntityType::Requirement,
-                                   firstReq.value().rows.front().requirementId);
-        if (imp.isOk()) impact_->setModel(imp.value());
-    }
+    if (!s.impacts.empty()) impact_->setModel(s.impacts.front());
 }
 
 }  // namespace lodestar::ui

@@ -22,7 +22,7 @@ Tests: `core/test/wp*_tests.cpp` (all currently pass). Schema: append-only migra
 | D | Coverage + evidence | A5 coverage by verification method; A6 DO-178C evidence package export (matrix+coverage+validation+audit bundle) | Med | DONE | senior-engineer-wpd | PASS (0 failures) | 2fb8451 |
 | E | API + duplicates | A8 REST API auth / API keys; A9 duplicate/similarity detection | Med | DONE | senior-engineer-wpe | PASS | cea75bf |
 | F | Robustness hardening | B2 typed error codes; B3 input validation & size limits; B4 DB backup/restore; B5 migration safety (dry-run/rollback/checksum); B6 fuzz/edge-case tests; B7 concurrency stress test; B8 structured logging | High | DONE | senior-engineer-wpf | PASS (37/37) | bf45a16 |
-| G | Real Qt UI | A7 install Qt, enable LODESTAR_BUILD_UI=ON, wire the 4 views (matrix/graph/impact/coverage) to the service | Med | TODO | - | - | - |
+| G | Real Qt UI | A7 install Qt, enable LODESTAR_BUILD_UI=ON, wire the 4 views (matrix/graph/impact/coverage) to the service | Med | DONE | senior-engineer-wpg | PASS (0 failures) | <hash> |
 
 ## Dependency order
 WP-A, WP-C, WP-F are independent and can run in parallel. WP-B depends on WP-A (pagination

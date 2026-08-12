@@ -35,7 +35,8 @@ lodestar_add_module(lodestar_tracelink
     tracelink/ChangeRequestService.cpp
     tracelink/RulesEngine.cpp
     tracelink/IoService.cpp
-    tracelink/ViewModelFactory.cpp)
+    tracelink/ViewModelFactory.cpp
+    tracelink/UiWiringService.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
 # --- ScenarioForge (real GNSS math, Phase 4) ---------------------------------
@@ -289,5 +290,15 @@ if(LODESTAR_BUILD_TESTS)
         target_link_libraries(lodestar_wpE_tests PRIVATE ws2_32)
     endif()
     target_compile_definitions(lodestar_wpE_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- WP-G: Qt UI wiring (Qt-independent view-model/service wiring) ------
+    add_executable(lodestar_wpG_tests
+        test/wpG_tests.cpp)
+    target_link_libraries(lodestar_wpG_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wpG_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
