@@ -727,10 +727,15 @@ common::Result<DiffResult> BaselineService::diffBaseline(const std::string& aId,
     std::sort(keys.begin(), keys.end());
 
     for (const auto& k : keys) {
-        auto typeOpt = entityTypeFromString(aMap[k].empty() ? bMap[k][0] : aMap[k][0]);
-        EntityType type = typeOpt.value_or(EntityType::Requirement);
         auto aIt = aMap.find(k);
         auto bIt = bMap.find(k);
+        // Determine the entity type from whichever baseline actually holds the
+        // entity. NOTE: never use aMap[k] here -- operator[] would insert an
+        // empty entry for an "added" entity, making aMap.find(k) succeed and
+        // the code below read aIt->second[3] on an empty vector (out of bounds).
+        std::string typeStr = (aIt != aMap.end()) ? aIt->second[0] : bIt->second[0];
+        auto typeOpt = entityTypeFromString(typeStr);
+        EntityType type = typeOpt.value_or(EntityType::Requirement);
         DiffEntry de;
         if (aIt == aMap.end()) {
             de.kind = DiffKind::Added;
@@ -917,6 +922,33 @@ common::Result<int> BaselineService::restoreBaseline(const std::string& baseline
         return common::Result<int>::err("COMMIT failed");
     }
     return common::Result<int>::ok(restored);
+}
+
+common::Result<void> BaselineService::restoreEntity(EntityType type,
+                                                    const std::string& id,
+                                                    const std::string& baselineId) {
+    // The entity must be present in the baseline snapshot.
+    auto at = entityAtBaseline(type, id, baselineId);
+    if (at.failed()) return common::Result<void>::err(at.error());
+    if (!at.value().has_value()) {
+        return common::Result<void>::err(
+            common::ErrorCode::NotFound,
+            "entity not found in baseline " + baselineId + ": " + id);
+    }
+
+    auto begin = db_.execute("BEGIN IMMEDIATE;");
+    if (begin.failed()) return common::Result<void>::err("BEGIN failed");
+    auto res = restoreEntityRow(db_.handle(), type, at.value().value());
+    if (res.failed()) {
+        db_.execute("ROLLBACK;");
+        return common::Result<void>::err(res.error());
+    }
+    auto commit = db_.execute("COMMIT;");
+    if (commit.failed()) {
+        db_.execute("ROLLBACK;");
+        return common::Result<void>::err("COMMIT failed");
+    }
+    return common::Result<void>::ok();
 }
 
 }  // namespace lodestar::tracelink

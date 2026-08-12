@@ -103,6 +103,13 @@ public:
     // snapshot). Returns the number of entities restored.
     common::Result<int> restoreBaseline(const std::string& baselineId);
 
+    // Restores a single entity to its exact state captured in `baselineId`
+    // (fields/status/version reverted to the snapshot). Fails cleanly if the
+    // entity is missing from the baseline. Used by the WP-9 per-item rollback
+    // wiring (UiWiringService::rollbackEntity).
+    common::Result<void> restoreEntity(EntityType type, const std::string& id,
+                                       const std::string& baselineId);
+
     // Audit entries tagged to a change request + downstream affected entities.
     common::Result<ImpactResult>
         changeImpact(EntityType type, const std::string& id, const std::string& changeRequestId);
