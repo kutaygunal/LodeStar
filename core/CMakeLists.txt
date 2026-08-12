@@ -86,10 +86,22 @@ lodestar_add_module(lodestar_testforge
     testforge/TestRunner.cpp
     testforge/ReportGenerator.cpp
     testforge/Coverage.cpp
+    testforge/CoberturaImport.cpp
     testforge/SkydelMeasurementProvider.cpp)
 target_link_libraries(lodestar_testforge PUBLIC lodestar_common lodestar_persistence lodestar_adapters)
 target_compile_definitions(lodestar_testforge PRIVATE
     LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+# --- S3 Phase 3: real structural coverage - Cobertura report ingest CLI -----
+# Imports a Cobertura XML report (as produced by OpenCppCoverage; see
+# ci/run_coverage.ps1) into coverage_results. Always built (not gated behind
+# LODESTAR_BUILD_TESTS): it's a small utility, not a test.
+add_executable(lodestar_coverage_ingest
+    testforge/CoverageIngestMain.cpp)
+target_link_libraries(lodestar_coverage_ingest PRIVATE
+    lodestar_common lodestar_persistence lodestar_testforge)
+target_compile_definitions(lodestar_coverage_ingest PRIVATE
+    LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 lodestar_add_module(lodestar_assurecheck
     assurecheck/AssureCheckService.cpp
     assurecheck/ComplianceEngine.cpp
@@ -806,6 +818,18 @@ if(LODESTAR_BUILD_TESTS)
     target_compile_definitions(lodestar_s2_phase4_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
+    # --- S3 Phase 3: real structural coverage (Cobertura import) -------------
+    # Cobertura XML parser + CoverageDao import path. Fixture-based: does not
+    # require OpenCppCoverage to be installed to run in CI.
+    add_executable(lodestar_s3_phase3_tests
+        test/s3_phase3_tests.cpp)
+    target_link_libraries(lodestar_s3_phase3_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_testforge)
+    target_compile_definitions(lodestar_s3_phase3_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of
     # relying solely on ci/run_all_tests.{sh,ps1} to grep exit codes. This is
@@ -813,12 +837,25 @@ if(LODESTAR_BUILD_TESTS)
     # JUnit output via --output-junit) work, and what an IDE test explorer or a
     # CI test-report plugin needs. Discovered by name pattern rather than
     # hand-listed so a new `lodestar_*_tests` target is picked up automatically.
+    #
+    # LODESTAR_TEST_TIMEOUT_SECS (default 120s) is a cache variable, not a
+    # literal, deliberately: an explicit per-test TIMEOUT property set here
+    # takes precedence over ctest's own `--timeout` CLI flag (verified: S3
+    # Phase 3's coverage run passed `--timeout 600` and the property still won,
+    # killing a legitimately-slow bulk-perf test at 120s under instrumentation
+    # overhead). ci/run_coverage.ps1 reconfigures with a higher value via
+    # -DLODESTAR_TEST_TIMEOUT_SECS=... in its own build directory rather than
+    # raising the default here, so the normal CI test gate keeps a tight
+    # timeout for actually catching a hung test fast.
+    set(LODESTAR_TEST_TIMEOUT_SECS "120" CACHE STRING
+        "Per-test CTest timeout in seconds.")
     get_property(_lodestar_all_targets DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         PROPERTY BUILDSYSTEM_TARGETS)
     foreach(_lodestar_t ${_lodestar_all_targets})
         if(_lodestar_t MATCHES "_tests$")
             add_test(NAME ${_lodestar_t} COMMAND ${_lodestar_t})
-            set_tests_properties(${_lodestar_t} PROPERTIES TIMEOUT 120)
+            set_tests_properties(${_lodestar_t} PROPERTIES
+                TIMEOUT ${LODESTAR_TEST_TIMEOUT_SECS})
         endif()
     endforeach()
     unset(_lodestar_all_targets)

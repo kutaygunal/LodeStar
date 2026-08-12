@@ -11,6 +11,13 @@
 //
 // Persistence lives in CoverageDao against the coverage_results table
 // (migration 026_coverage.sql).
+//
+// S3 Phase 3: rows can now come from two sources. save()/load()/list() below
+// accept a caller-supplied CoverageResult regardless of origin (unchanged
+// API), but the actually-recommended way to populate real coverage is
+// core/testforge/CoberturaImport.h + ci/run_coverage.ps1, which measure
+// statement coverage with a real instrumentation tool (OpenCppCoverage)
+// against the test suite, rather than a hand-supplied count.
 
 #include <optional>
 #include <string>

@@ -1,5 +1,6 @@
 # Build artifacts
 build/
+build-coverage/
 *.o
 *.obj
 *.lib
@@ -46,3 +47,8 @@ venv/
 *.db-wal
 *.db-shm
 lodestar_wpF_log.jsonl
+
+# S3 Phase 3: OpenCppCoverage's own run log (ci/run_coverage.ps1), written to
+# the working directory it's invoked from. build/coverage/*.xml is already
+# covered by build/ above.
+LastCoverageResults.log
