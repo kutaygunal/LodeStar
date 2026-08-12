@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <chrono>
 #include <string>
 
 #ifdef _WIN32
@@ -49,11 +50,20 @@ void closeSocket(int fd) {
 }
 
 void setSocketTimeout(int fd, int timeoutMs) {
+#ifdef _WIN32
+    // On Windows, SO_RCVTIMEO/SO_SNDTIMEO expect a DWORD timeout in
+    // milliseconds (not a struct timeval as on POSIX). Passing a timeval here
+    // would be read as a tiny millisecond value and cause spurious timeouts.
+    DWORD ms = static_cast<DWORD>(timeoutMs);
+    setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&ms), sizeof(ms));
+    setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&ms), sizeof(ms));
+#else
     struct timeval tv;
     tv.tv_sec = timeoutMs / 1000;
     tv.tv_usec = (timeoutMs % 1000) * 1000;
     setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<const char*>(&tv), sizeof(tv));
     setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<const char*>(&tv), sizeof(tv));
+#endif
 }
 
 bool sendAll(int fd, const char* data, size_t len) {
@@ -71,6 +81,15 @@ std::string recvAll(int fd) {
     char buf[4096];
     while (true) {
         int n = recv(fd, buf, sizeof(buf), 0);
+        if (n < 0) {
+#ifdef _WIN32
+            std::fprintf(stderr, "[DBG] recvAll n=%d err=%d\n", n, WSAGetLastError()); fflush(stderr);
+#else
+            std::fprintf(stderr, "[DBG] recvAll n=%d errno=%d\n", n, errno); fflush(stderr);
+#endif
+        } else {
+            std::fprintf(stderr, "[DBG] recvAll n=%d\n", n); fflush(stderr);
+        }
         if (n <= 0) break;
         out.append(buf, static_cast<size_t>(n));
         if (out.size() > (64u << 20)) break;  // 64 MB safety cap
@@ -144,6 +163,7 @@ HttpClient::Response HttpClient::request(const std::string& host, int port,
     setSocketTimeout(fd, timeoutMs);
 
     std::string reqPath = path.empty() ? "/" : path;
+    std::fprintf(stderr, "[DBG] HttpClient connecting %s:%d for %s %s\n", host.c_str(), port, method.c_str(), path.c_str()); fflush(stderr);
     std::string request = method + " " + reqPath + " HTTP/1.1\r\n";
     request += "Host: " + host + ":" + portStr + "\r\n";
     request += "Connection: close\r\n";
@@ -160,8 +180,12 @@ HttpClient::Response HttpClient::request(const std::string& host, int port,
     request += body;
 
     bool ok = sendAll(fd, request.data(), request.size());
+    std::fprintf(stderr, "[DBG] HttpClient sent %s %s ok=%d\n", method.c_str(), path.c_str(), ok ? 1 : 0); fflush(stderr);
+    auto rt0 = std::chrono::steady_clock::now();
     std::string raw;
     if (ok) raw = recvAll(fd);
+    auto rt1 = std::chrono::steady_clock::now();
+    std::fprintf(stderr, "[DBG] HttpClient recv %s %s rawSize=%zu recvMs=%lld\n", method.c_str(), path.c_str(), raw.size(), (long long)std::chrono::duration_cast<std::chrono::milliseconds>(rt1 - rt0).count()); fflush(stderr);
     closeSocket(fd);
 
     if (!ok || raw.empty()) {
@@ -184,6 +208,8 @@ HttpClient::Response HttpClient::request(const std::string& host, int port,
 
     size_t headerLen = 0;
     resp.body = splitBody(raw, &headerLen);
+    std::fprintf(stderr, "[DBG] HttpClient %s %s -> status=%d bodySize=%zu rawSize=%zu\n", method.c_str(), path.c_str(), resp.status, resp.body.size(), raw.size());
+    fflush(stderr);
     return resp;
 }
 

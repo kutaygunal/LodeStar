@@ -5,6 +5,7 @@
 
 #include <cstdio>
 #include <cstring>
+#include <chrono>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -187,6 +188,7 @@ void HttpServer::acceptLoop() {
         SockLen_t len = sizeof(client);
         int fd = static_cast<int>(accept(listenFd_, reinterpret_cast<sockaddr*>(&client), &len));
         if (fd < 0) continue;
+        std::fprintf(stderr, "[DBG] acceptLoop accepted fd=%d\n", fd); fflush(stderr);
 
         // Defensive recv timeout so a malformed client can never wedge the
         // single accept thread forever.
@@ -234,6 +236,8 @@ HttpResponse HttpServer::dispatch(const HttpRequest& req) const {
 }
 
 void HttpServer::handleClient(int fd) {
+    auto t0 = std::chrono::steady_clock::now();
+    std::fprintf(stderr, "[DBG] handleClient start fd=%d\n", fd); fflush(stderr);
     std::string raw;
     char buf[4096];
     bool headerDone = false;
@@ -298,6 +302,9 @@ void HttpServer::handleClient(int fd) {
     }
 
     HttpResponse resp = dispatch(req);
+    auto t1 = std::chrono::steady_clock::now();
+    std::fprintf(stderr, "[DBG] handleClient method=%s path=%s -> status=%d bodySize=%zu elapsedMs=%lld\n", req.method.c_str(), req.path.c_str(), resp.status, resp.body.size(), (long long)std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count());
+    fflush(stderr);
 
     std::string out = "HTTP/1.1 " + std::to_string(resp.status) + " ";
     out += std::string(resp.status == 200 ? "OK"

@@ -86,6 +86,7 @@ lodestar_add_module(lodestar_assurecheck
     assurecheck/EvidenceService.cpp
     assurecheck/PerformanceService.cpp
     assurecheck/ReportService.cpp
+    assurecheck/DashboardService.cpp
     assurecheck/stub.cpp)
 target_link_libraries(lodestar_assurecheck PUBLIC
     lodestar_common lodestar_persistence lodestar_tracelink lodestar_testforge)
@@ -113,7 +114,8 @@ lodestar_add_module(lodestar_api
     api/HttpServer.cpp
     api/ApiServer.cpp
     api/ApiKeyService.cpp
-    api/TraceLinkApiServer.cpp)
+    api/TraceLinkApiServer.cpp
+    api/AssureCheckApiServer.cpp)
 target_link_libraries(lodestar_api PUBLIC
     lodestar_common
     lodestar_adapters
@@ -487,5 +489,23 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_assurecheck)
     target_compile_definitions(lodestar_wp5_assurecheck_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 11 WP-6: AssureCheck REST API + compliance dashboard --------
+    # Test contract: docs/wp6-assurecheck-task.md (written by scrum-master).
+    # Named lodestar_wp6_assurecheck_tests to avoid clobbering the existing
+    # Phase-1 tracelink lodestar_wp6_tests regression target.
+    add_executable(lodestar_wp6_assurecheck_tests
+        test/wp6_assurecheck_tests.cpp)
+    target_link_libraries(lodestar_wp6_assurecheck_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck
+        lodestar_api
+        lodestar_adapters)
+    if(WIN32)
+        target_link_libraries(lodestar_wp6_assurecheck_tests PRIVATE ws2_32)
+    endif()
+    target_compile_definitions(lodestar_wp6_assurecheck_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
