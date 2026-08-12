@@ -13,7 +13,7 @@ is a CMake static lib target (`lodestar_*`). Schema is append-only migrations in
 | # | WP | Description | Priority | Status | Assigned to | Tests | Committed |
 |---|-----|-------------|----------|--------|-------------|-------|-----------|
 | 1 | Domain model + schema | Rich typed entities + typed links + metadata; migrations 003/004; DAO CRUD/update/soft-delete/search; status state machines; integrity on write (dangling/duplicate/self-loop/relation-type) | High | DONE | senior-engineer-wp1 | PASS (60/60 + 118/118 smoke) | f5c91b5 |
-| 2 | Graph engine | upstream/downstream closure, impactAnalysis, coverage/coverageGap, traceMatrix, reverse-relation mapping | High | TODO | - | - | - |
+| 2 | Graph engine | upstream/downstream closure, impactAnalysis, coverage/coverageGap, traceMatrix, reverse-relation mapping | High | DONE | senior-engineer-wp2 | PASS (0 fail; WP-1 regression 0) | 2fd64e5 |
 | 3 | Rules engine + validation | rule data model, evaluation, built-in templates (REQ_MUST_BE_VERIFIED etc.), validation_runs + compliance_violations, standard tagging | High | TODO | - | - | - |
 | 4 | Audit + baselines + diff | audit_log writes on every mutation; Baselines snapshots; diffBaseline(a,b); history; entityAtBaseline | Medium | TODO | - | - | - |
 | 5 | Import/Export | CSV matrix+entities export, HTML report, ReqIF import+export, non-destructive import with batch+log | Medium | TODO | - | - | - |
