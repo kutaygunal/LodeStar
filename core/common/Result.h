@@ -29,6 +29,39 @@ private:
     std::variant<T, std::string> data_;
 };
 
+// Specialization for std::string results. The primary template stores both the
+// value and the error as std::string, which would be ambiguous (and an
+// ill-formed duplicate-variant) when T == std::string, so it gets its own layout.
+template <>
+class Result<std::string> {
+public:
+    static Result ok(std::string value) {
+        Result r;
+        r.ok_ = true;
+        r.value_ = std::move(value);
+        return r;
+    }
+    static Result err(std::string message) {
+        Result r;
+        r.ok_ = false;
+        r.error_ = std::move(message);
+        return r;
+    }
+
+    bool isOk() const { return ok_; }
+    bool failed() const { return !ok_; }
+
+    std::string& value() { return value_; }
+    const std::string& value() const { return value_; }
+    const std::string& error() const { return error_; }
+
+private:
+    Result() = default;
+    bool ok_ = false;
+    std::string value_;
+    std::string error_;
+};
+
 // Specialization for void results.
 template <>
 class Result<void> {
