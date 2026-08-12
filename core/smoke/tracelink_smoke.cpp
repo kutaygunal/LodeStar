@@ -48,7 +48,7 @@ int runTraceLinkSmoke() {
     auto migrated = runner.run(LODESTAR_MIGRATIONS_DIR);
     check(migrated.isOk(), "migration runs");
     if (migrated.failed()) return 1;
-    check(migrated.value() == 18, "schema migrated to v18 (001..018 applied)");
+    check(migrated.value() == 19, "schema migrated to v19 (001..019 applied)");
 
     TraceLinkService svc(db);
 
