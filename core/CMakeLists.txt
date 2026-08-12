@@ -82,6 +82,7 @@ target_compile_definitions(lodestar_testforge PRIVATE
     LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 lodestar_add_module(lodestar_assurecheck
     assurecheck/AssureCheckService.cpp
+    assurecheck/ComplianceEngine.cpp
     assurecheck/stub.cpp)
 target_link_libraries(lodestar_assurecheck PUBLIC lodestar_common lodestar_persistence)
 lodestar_add_module(lodestar_riskai        riskai/stub.cpp)
@@ -427,5 +428,18 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_assurecheck)
     target_compile_definitions(lodestar_wp1_assurecheck_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Phase 11 WP-2: AssureCheck compliance engine (migration 020) ------
+    # Test contract: docs/wp2-assurecheck-task.md (written by scrum-master).
+    # Named lodestar_wp2_assurecheck_tests to avoid clobbering the existing
+    # Phase-1 tracelink lodestar_wp2_tests regression target.
+    add_executable(lodestar_wp2_assurecheck_tests
+        test/wp2_assurecheck_tests.cpp)
+    target_link_libraries(lodestar_wp2_assurecheck_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck)
+    target_compile_definitions(lodestar_wp2_assurecheck_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
