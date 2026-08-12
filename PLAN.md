@@ -1,54 +1,47 @@
-# Plan — TraceLink Phase 10 (Competitive Gaps)
+# Plan — AssureCheck (Phase 11)
 
-Purpose: Close all **top + medium** competitive gaps identified in
-`docs/tracelink-gap-analysis.md`, **excluding AI and web/browser** (per user). Commercial
-grade. Builds on WP-1..WP-8 + v2 WP-A..WP-G (all committed, all tests green).
+Purpose: Build the **AssureCheck** module (currently a stub) into a commercial-grade
+compliance-checking engine covering **ARP4754A, ARP4761, DO-178C, DO-254, DO-278A** as much
+as possible. Performant, certification-ready, integrated with TraceLink + TestForge.
 
 Context: Lodestar C++17 CMake monorepo (MSVC/Windows). Build: `cmake --build build --config
-Release` (HARD TIMEOUT). Self-verify: `./build/core/Release/lodestar_smoke.exe`. TraceLink
-module: `core/tracelink/` (TraceLinkService, GraphEngine, RulesEngine, BaselineService,
-IoService, ChangeRequestService, StateMachine, ViewModelFactory, Types). REST API:
-`core/api/TraceLinkApiServer.cpp` + `ApiKeyService`. Tests: `core/test/wp*_tests.cpp` (all
-pass). Schema: append-only migrations in `core/persistence/migrations/` (001-017 exist; new
-start at 018). Qt 6.8.2 installed at `/c/Qt/6.8.2/msvc2022_64`. Qt UI views exist in `ui/`
-but are NOT built (LODESTAR_BUILD_UI=OFF). To build UI: configure with
-`-DCMAKE_PREFIX_PATH=/c/Qt/6.8.2/msvc2022_64 -DLODESTAR_BUILD_UI=ON`.
+Release` (HARD TIMEOUT). Self-verify: `./build/core/Release/lodestar_smoke.exe`. AssureCheck
+is a stub at `core/assurecheck/stub.cpp` (only `module_version()`). It must become a real
+CMake lib target `lodestar_assurecheck`. TraceLink (requirements/design/test/trace graph,
+compliance rules) and TestForge (test runs) are DONE and available for integration. Schema:
+append-only migrations in `core/persistence/migrations/` (001-017 exist; new start at 018).
+Qt 6.8.2 at `/c/Qt/6.8.2/msvc2022_64`. Tests: `core/test/wp*_tests.cpp`.
 
-## Scope (included)
-Top: suspect-link workflow, live coverage dashboard. Medium: interactive matrix, baseline
-visual diff+rollback, left-nav tree+detail panel, dashboards/charts, document-style
-authoring, general review/comment/approval, compliance templates/checklists, TestForge
-coverage wiring, user roles/permissions+concurrent editing.
+## Reference
+- **Standards checklists:** `docs/assurecheck-standards-checklist.md` (136 items across
+  DO-178C A-1..A-7, DO-254, ARP4754A, ARP4761, DO-278A). Seed the engine from this.
+- **Architecture:** `docs/architecture.md` — AssureCheck = compliance checks for the
+  assurance standards; `assurance_checks` table.
 
-## Scope (EXCLUDED per user)
-- **AI** (quality scoring, AI suggestions) — NOT in this phase.
-- **Web/browser** presentation — NOT in this phase. UI is the Qt desktop app.
+## Scope (commercial grade)
+Standards registry + DAL levels, checklist engine (136 objectives), compliance engine
+(PASS/FAIL/NA/WARNING + evidence), DAL applicability, evidence collection from
+TraceLink/TestForge, certification-ready reports, objective coverage, performance at scale,
+REST API + Qt compliance dashboard.
 
 ## Work packages
 
 | # | WP | Tasks | Priority | Status | Assigned to | Tests | Committed |
 |---|-----|-------|----------|--------|-------------|-------|-----------|
-| 1 | Suspect-link workflow | Auto-flag downstream artifacts as `suspect` when a requirement changes; review/clear queue; suspect status on links/entities; migration 013 | High | DONE | senior-engineer-wp1 | wp1_suspect_tests | 19ca1aa |
-| 2 | Review/comment/approval | General artifact review + comments + approval (beyond change requests); migration 014 | Med | DONE | senior-engineer-wp2 | wp2_review_tests | b0942f8 |
-| 3 | Compliance templates/checklists | Guided OOTB templates/checklists for ARP4754A/ARP4761/DO-178C/DO-254; migration 015 | Med | DONE | senior-engineer-wp3 | wp3_compliance_tests | b0942f8 |
-| 4 | Roles/permissions + concurrency | User roles + permissions (RBAC) on entities/links; concurrent-edit safety (optimistic locking/version check); migration 016 | Med | DONE | senior-engineer-wp4 | wp4_rbac_tests | 1297129 |
-| 5 | TestForge coverage wiring | Wire TestForge test runs into live coverage (coverage reflects executed results) | Med | DONE | senior-engineer-wp5 | wp5_coverage_tests | fdb42a9 |
-| 6 | Qt UI shell | Left-nav project tree + right-side detail/properties panel; enable LODESTAR_BUILD_UI=ON with Qt 6.8.2 | Med | DONE | senior-engineer-wp6 | wp6_ui_tests | ae79d3d |
-| 7 | Coverage dashboard + charts | Live coverage dashboard (red/green gaps) + status/priority/coverage charts | High | DONE | senior-engineer-wp7 | wp7_dashboard_tests | e2bb3ef |
-| 8 | Interactive traceability matrix | Search, filter, saved views, relationship toggling, export | Med | DONE | senior-engineer-wp8 | wp8_matrix_tests | 265f7a6 |
-| 9 | Baseline visual diff + rollback | Visual compare view + per-item rollback UI | Med | DONE | senior-engineer-wp9 | wp9_diff_tests | 88d8bf1 |
-| 10 | Document-style authoring | Author requirements in a document context with atomic traceability | Med | DONE | senior-engineer-wp10 | wp10_doc_tests | d54c38b |
+| 1 | Standards + checklist data model | Migration 019: standards registry, checklist items, DAL levels, objectives, evidence requirements. Seed all 136 items from the checklist doc | High | DONE | - | wp1_assurecheck_tests | cca2cf3 |
+| 2 | Compliance engine | Run checks against project data; PASS/FAIL/NA/WARNING; DAL applicability; evidence links; assurance_checks storage | High | TODO | - | - | - |
+| 3 | Evidence + integration | Pull requirements/design/test/trace data from TraceLink; test-run results from TestForge as verification evidence | High | TODO | - | - | - |
+| 4 | Compliance reporting | Certification-ready reports per standard/DAL; objective coverage %; export HTML/CSV/JSON | Med | TODO | - | - | - |
+| 5 | Performance + hardening | Indexed checks, batched evaluation, incremental re-check, 10k+ scale, WAL/transactions | Med | TODO | - | - | - |
+| 6 | REST API + Qt UI | /assurecheck endpoints; compliance dashboard view (objective coverage, per-standard status) | Med | TODO | - | - | - |
 
 ## Dependency order
-- **Engine WPs 1-4 are independent** — run in parallel first.
-- WP-5 depends on WP-1 (suspect) lightly + TestForge; can run with engine batch.
-- **UI WPs 6-10 depend on the engine WPs** (consume the service surface) and on Qt config.
-  WP-6 (UI shell) first, then WP-7 (needs WP-5 + WP-6), WP-8/9/10 (need WP-6).
-- Recommended batches: Batch 1 = WP-1,2,3,4,5 (engine, parallel). Batch 2 = WP-6 (UI shell).
-  Batch 3 = WP-7,8,9,10 (UI views, parallel after shell).
+WP-1 -> WP-2 -> WP-3 -> WP-4 -> WP-5 -> WP-6. WP-1 is the foundation (data model + seed).
+WP-2 depends on WP-1. WP-3 depends on WP-2 + TraceLink/TestForge. WP-4 depends on WP-2/3.
+WP-5 can run parallel with WP-4. WP-6 depends on WP-1..WP-5.
 
 ## Working rules
 Follow docs/working-rules.md. Build with HARD TIMEOUT, run tests ONE AT A TIME. Only
 devops-<wp> commits/pushes. Update Status/Committed columns and commit as chore(...) after
-each WP. Every WP commercial grade: full tests, no regressions, smoke passes. UI WPs must
-build with Qt 6.8.2 (CMAKE_PREFIX_PATH + LODESTAR_BUILD_UI=ON) and pass their tests.
+each WP. Every WP commercial grade: full tests, no regressions, smoke passes. UI WP must
+build with Qt 6.8.2 (CMAKE_PREFIX_PATH + LODESTAR_BUILD_UI=ON).
