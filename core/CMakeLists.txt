@@ -57,7 +57,14 @@ lodestar_add_module(lodestar_scenario
 target_link_libraries(lodestar_scenario PUBLIC lodestar_common)
 
 # --- Stub modules (empty libraries that compile) ----------------------------
-lodestar_add_module(lodestar_testforge     testforge/stub.cpp)
+lodestar_add_module(lodestar_testforge
+    testforge/TestForgeDao.cpp
+    testforge/PlanGenerator.cpp
+    testforge/TestRunner.cpp
+    testforge/ReportGenerator.cpp)
+target_link_libraries(lodestar_testforge PUBLIC lodestar_common lodestar_persistence)
+target_compile_definitions(lodestar_testforge PRIVATE
+    LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 lodestar_add_module(lodestar_assurecheck   assurecheck/stub.cpp)
 lodestar_add_module(lodestar_riskai        riskai/stub.cpp)
 lodestar_add_module(lodestar_integratehub  integratehub/stub.cpp)
@@ -108,16 +115,19 @@ target_link_libraries(lodestar_core INTERFACE
 add_executable(lodestar_smoke
     smoke/main.cpp
     smoke/scenario_smoke.cpp
-    smoke/adapters_api_smoke.cpp)
+    smoke/adapters_api_smoke.cpp
+    smoke/testforge_smoke.cpp)
 target_link_libraries(lodestar_smoke PRIVATE
     lodestar_common
     lodestar_persistence
     lodestar_tracelink
     lodestar_scenario
     lodestar_adapters
-    lodestar_api)
+    lodestar_api
+    lodestar_testforge)
 if(WIN32)
     target_link_libraries(lodestar_smoke PRIVATE ws2_32)
 endif()
 target_compile_definitions(lodestar_smoke PRIVATE
-    LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+    LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations"
+    LODESTAR_TESTFORGE_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")

@@ -19,6 +19,7 @@
 
 namespace lodestar::scenario { int runScenarioSmoke(); }
 namespace lodestar { int runAdaptersApiSmoke(); }
+namespace lodestar::testforge { int runTestForgeSmoke(); }
 
 #ifndef LODESTAR_MIGRATIONS_DIR
 #define LODESTAR_MIGRATIONS_DIR "core/persistence/migrations"
@@ -137,6 +138,12 @@ int main(int argc, char** argv) {
     int adaptersResult = lodestar::runAdaptersApiSmoke();
     if (adaptersResult != 0) {
         return fail("Adapters + API smoke path failed");
+    }
+
+    // Phase 6: TestForge IT&V plan/run/report/persist smoke path.
+    int testforgeResult = lodestar::testforge::runTestForgeSmoke();
+    if (testforgeResult != 0) {
+        return fail("TestForge smoke path failed");
     }
 
     return 0;
