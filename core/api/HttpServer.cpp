@@ -72,6 +72,35 @@ void parseQuery(const std::string& uri, std::map<std::string, std::string>& para
     }
 }
 
+// Parse the raw header block (everything up to the blank line) into a map of
+// lowercased header name -> trimmed value. The first line is the request line
+// and is skipped.
+void parseHeaders(const std::string& block, std::map<std::string, std::string>& out) {
+    size_t start = 0;
+    while (start < block.size()) {
+        size_t eol = block.find('\n', start);
+        std::string line = block.substr(start, eol == std::string::npos ? std::string::npos : eol - start);
+        if (!line.empty() && line.back() == '\r') line.pop_back();
+        size_t colon = line.find(':');
+        if (colon != std::string::npos) {
+            std::string name;
+            for (size_t i = 0; i < colon; ++i) {
+                char c = line[i];
+                if (c >= 'A' && c <= 'Z') c = static_cast<char>(c + 32);
+                name.push_back(c);
+            }
+            std::string value = line.substr(colon + 1);
+            // Trim leading/trailing whitespace.
+            size_t b = 0, e = value.size();
+            while (b < e && (value[b] == ' ' || value[b] == '\t')) ++b;
+            while (e > b && (value[e - 1] == ' ' || value[e - 1] == '\t')) --e;
+            out[name] = value.substr(b, e - b);
+        }
+        if (eol == std::string::npos) break;
+        start = eol + 1;
+    }
+}
+
 }  // namespace
 
 HttpServer::~HttpServer() { stop(); }
@@ -261,6 +290,9 @@ void HttpServer::handleClient(int fd) {
         }
     }
     parseQuery(req.path, req.params);
+    if (headerDone && headerEnd > 0) {
+        parseHeaders(raw.substr(0, headerEnd), req.headers);
+    }
     if (contentLength > 0 && raw.size() >= headerEnd) {
         req.body = raw.substr(headerEnd, contentLength);
     }

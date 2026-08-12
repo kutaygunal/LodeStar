@@ -27,7 +27,8 @@ public:
                             const std::string& method, const std::string& path,
                             const std::string& body,
                             const std::string& contentType,
-                            int timeoutMs, std::string* errOut);
+                            int timeoutMs, std::string* errOut,
+                            const std::string& extraHeaders = "");
 };
 
 }  // namespace lodestar::adapters

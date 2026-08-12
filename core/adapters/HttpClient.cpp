@@ -101,7 +101,8 @@ HttpClient::Response HttpClient::request(const std::string& host, int port,
                                          const std::string& path,
                                          const std::string& body,
                                          const std::string& contentType,
-                                         int timeoutMs, std::string* errOut) {
+                                         int timeoutMs, std::string* errOut,
+                                         const std::string& extraHeaders) {
     Response resp;
     WsaGuard wsa;
 
@@ -149,6 +150,11 @@ HttpClient::Response HttpClient::request(const std::string& host, int port,
     if (!body.empty()) {
         request += "Content-Type: " + (contentType.empty() ? "application/json" : contentType) + "\r\n";
         request += "Content-Length: " + std::to_string(body.size()) + "\r\n";
+    }
+    // Append caller-supplied extra header lines (e.g. "X-API-Key: <key>").
+    if (!extraHeaders.empty()) {
+        request += extraHeaders;
+        if (extraHeaders.back() != '\n') request += "\r\n";
     }
     request += "\r\n";
     request += body;

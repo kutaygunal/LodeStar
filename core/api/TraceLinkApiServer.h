@@ -33,8 +33,10 @@
 
 #pragma once
 
+#include <optional>
 #include <string>
 
+#include "core/api/ApiKeyService.h"
 #include "core/api/HttpServer.h"
 #include "core/tracelink/BaselineService.h"
 #include "core/tracelink/GraphEngine.h"
@@ -50,12 +52,17 @@ public:
                        tracelink::GraphEngine& graph,
                        tracelink::RulesEngine& rules,
                        tracelink::BaselineService& baseline,
-                       tracelink::IoService& io);
+                       tracelink::IoService& io,
+                       ApiKeyService* auth = nullptr);
 
     // Register every /tracelink route on the server.
     void setup(HttpServer& server);
 
 private:
+    // When auth_ is non-null, returns a 401 response for a request that lacks a
+    // valid X-API-Key header; otherwise returns nullopt (request is authorized).
+    std::optional<HttpResponse> authCheck(const HttpRequest& req) const;
+
     HttpResponse entitiesList(const HttpRequest& req);
     HttpResponse entityCreate(const HttpRequest& req);
     HttpResponse entityGet(const HttpRequest& req);
@@ -86,6 +93,7 @@ private:
     tracelink::RulesEngine& rules_;
     tracelink::BaselineService& baseline_;
     tracelink::IoService& io_;
+    ApiKeyService* auth_ = nullptr;
 };
 
 }  // namespace lodestar::api

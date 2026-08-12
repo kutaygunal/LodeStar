@@ -30,6 +30,12 @@ struct HierarchyNode {
     std::vector<HierarchyNode> children;
 };
 
+// WP-E (A9): a group of similar entities (by name/text similarity).
+struct DuplicateGroup {
+    std::vector<Entity> entities;   // >= 2 similar entities
+    double similarity = 0.0;        // max pairwise similarity (0..1)
+};
+
 class TraceLinkService {
 public:
     explicit TraceLinkService(persistence::Database& db);
@@ -117,6 +123,14 @@ public:
     // Builds the full nested tree rooted at `id` (recursive).
     common::Result<HierarchyNode> buildTree(EntityType type,
                                             const std::string& rootId);
+
+    // --- WP-E (A9): duplicate / similarity detection -----------------------
+    // Groups entities of `type` whose pairwise similarity >= threshold.
+    // Exact duplicates (identical name+text) always group. Returns groups
+    // with at least 2 members; each group's `similarity` is the maximum
+    // pairwise similarity among its members.
+    common::Result<std::vector<DuplicateGroup>> findDuplicates(
+        EntityType type, double threshold = 0.8);
 
 private:
     bool nodeExists(EntityType type, const std::string& id);

@@ -23,6 +23,7 @@ struct HttpRequest {
     std::string method;
     std::string path;
     std::map<std::string, std::string> params;  // path <params> + query
+    std::map<std::string, std::string> headers;  // request headers, lowercased keys
     std::string body;
 };
 

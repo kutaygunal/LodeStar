@@ -7,6 +7,7 @@
 
 #include "core/api/TraceLinkApiServer.h"
 
+#include <functional>
 #include <optional>
 #include <string>
 #include <utility>
@@ -227,54 +228,113 @@ TraceLinkApiServer::TraceLinkApiServer(tl::TraceLinkService& svc,
                                        tl::GraphEngine& graph,
                                        tl::RulesEngine& rules,
                                        tl::BaselineService& baseline,
-                                       tl::IoService& io)
-    : svc_(svc), graph_(graph), rules_(rules), baseline_(baseline), io_(io) {}
+                                       tl::IoService& io,
+                                       ApiKeyService* auth)
+    : svc_(svc), graph_(graph), rules_(rules), baseline_(baseline), io_(io),
+      auth_(auth) {}
+
+std::optional<HttpResponse> TraceLinkApiServer::authCheck(const HttpRequest& req) const {
+    if (!auth_) return std::nullopt;  // auth disabled
+    auto it = req.headers.find("x-api-key");
+    if (it == req.headers.end() || !auth_->isValid(it->second)) {
+        return err(401, "unauthorized: missing or invalid API key");
+    }
+    return std::nullopt;
+}
 
 void TraceLinkApiServer::setup(HttpServer& server) {
+    // Wrap every handler so that, when auth is enabled, a request without a
+    // valid X-API-Key header is rejected with 401 before reaching the route.
+    auto guard = [this](const HttpRequest& r,
+                        const std::function<HttpResponse(const HttpRequest&)>& fn) {
+        if (auto denied = authCheck(r)) return *denied;
+        return fn(r);
+    };
+
     server.route("GET", "/tracelink/entities",
-                 [this](const HttpRequest& r) { return entitiesList(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return entitiesList(x); });
+                 });
     server.route("POST", "/tracelink/entities",
-                 [this](const HttpRequest& r) { return entityCreate(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return entityCreate(x); });
+                 });
     server.route("GET", "/tracelink/entities/<type>/<id>/history",
-                 [this](const HttpRequest& r) { return entityHistory(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return entityHistory(x); });
+                 });
     server.route("GET", "/tracelink/entities/<type>/<id>",
-                 [this](const HttpRequest& r) { return entityGet(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return entityGet(x); });
+                 });
     server.route("PUT", "/tracelink/entities/<type>/<id>",
-                 [this](const HttpRequest& r) { return entityUpdate(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return entityUpdate(x); });
+                 });
     server.route("DELETE", "/tracelink/entities/<type>/<id>",
-                 [this](const HttpRequest& r) { return entityDelete(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return entityDelete(x); });
+                 });
 
     server.route("POST", "/tracelink/links",
-                 [this](const HttpRequest& r) { return linkCreate(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return linkCreate(x); });
+                 });
     server.route("GET", "/tracelink/links",
-                 [this](const HttpRequest& r) { return linksList(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return linksList(x); });
+                 });
     server.route("PUT", "/tracelink/links/<id>",
-                 [this](const HttpRequest& r) { return linkUpdate(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return linkUpdate(x); });
+                 });
     server.route("DELETE", "/tracelink/links/<id>",
-                 [this](const HttpRequest& r) { return linkDelete(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return linkDelete(x); });
+                 });
 
     server.route("GET", "/tracelink/impact/<type>/<id>",
-                 [this](const HttpRequest& r) { return impact(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return impact(x); });
+                 });
     server.route("GET", "/tracelink/coverage",
-                 [this](const HttpRequest& r) { return coverage(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return coverage(x); });
+                 });
     server.route("GET", "/tracelink/matrix",
-                 [this](const HttpRequest& r) { return matrix(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return matrix(x); });
+                 });
     server.route("POST", "/tracelink/validate",
-                 [this](const HttpRequest& r) { return validate(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return validate(x); });
+                 });
     server.route("GET", "/tracelink/rules",
-                 [this](const HttpRequest& r) { return rulesList(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return rulesList(x); });
+                 });
 
     server.route("POST", "/tracelink/baselines",
-                 [this](const HttpRequest& r) { return baselineCreate(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return baselineCreate(x); });
+                 });
     server.route("GET", "/tracelink/baselines",
-                 [this](const HttpRequest& r) { return baselineList(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return baselineList(x); });
+                 });
     server.route("GET", "/tracelink/baselines/<a>/diff",
-                 [this](const HttpRequest& r) { return baselineDiff(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return baselineDiff(x); });
+                 });
 
     server.route("POST", "/tracelink/import/<format>",
-                 [this](const HttpRequest& r) { return importRoute(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return importRoute(x); });
+                 });
     server.route("GET", "/tracelink/export/<format>",
-                 [this](const HttpRequest& r) { return exportRoute(r); });
+                 [this, guard](const HttpRequest& r) {
+                     return guard(r, [this](const HttpRequest& x) { return exportRoute(x); });
+                 });
 }
 
 // ---------------------------------------------------------------------------

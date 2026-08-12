@@ -1191,6 +1191,123 @@ common::Result<HierarchyNode> TraceLinkService::buildTree(
 }
 
 // ---------------------------------------------------------------------------
+// WP-E (A9): duplicate / similarity detection
+// ---------------------------------------------------------------------------
+namespace {
+
+// Tokenizes a string into lowercase alphanumeric tokens (split on any
+// non-alphanumeric character).
+std::vector<std::string> tokenize(const std::string& s) {
+    std::vector<std::string> out;
+    std::string cur;
+    for (char c : s) {
+        if (std::isalnum(static_cast<unsigned char>(c))) {
+            cur.push_back(static_cast<char>(std::tolower(static_cast<unsigned char>(c))));
+        } else if (!cur.empty()) {
+            out.push_back(cur);
+            cur.clear();
+        }
+    }
+    if (!cur.empty()) out.push_back(cur);
+    return out;
+}
+
+// Jaccard similarity of two token sets. Two empty sets are treated as
+// identical (1.0); a set compared against an empty set is 0.0.
+double jaccard(const std::vector<std::string>& a, const std::vector<std::string>& b) {
+    if (a.empty() && b.empty()) return 1.0;
+    if (a.empty() || b.empty()) return 0.0;
+    std::set<std::string> sa(a.begin(), a.end());
+    std::set<std::string> sb(b.begin(), b.end());
+    size_t inter = 0;
+    for (const auto& t : sa) if (sb.count(t)) ++inter;
+    size_t uni = sa.size() + sb.size() - inter;
+    if (uni == 0) return 1.0;
+    return static_cast<double>(inter) / static_cast<double>(uni);
+}
+
+// Combined name+text similarity in [0,1]. Name and text each contribute half.
+// Identical name+text yields exactly 1.0.
+double entitySimilarity(const Entity& a, const Entity& b) {
+    auto na = tokenize(a.name);
+    auto nb = tokenize(b.name);
+    auto ta = tokenize(a.text);
+    auto tb = tokenize(b.text);
+    return 0.5 * jaccard(na, nb) + 0.5 * jaccard(ta, tb);
+}
+
+// Union-find over n nodes.
+struct UnionFind {
+    explicit UnionFind(size_t n) : parent(n) {
+        for (size_t i = 0; i < n; ++i) parent[i] = i;
+    }
+    size_t find(size_t x) {
+        while (parent[x] != x) {
+            parent[x] = parent[parent[x]];
+            x = parent[x];
+        }
+        return x;
+    }
+    void unite(size_t a, size_t b) { parent[find(a)] = find(b); }
+    std::vector<size_t> parent;
+};
+
+}  // namespace
+
+common::Result<std::vector<DuplicateGroup>> TraceLinkService::findDuplicates(
+    EntityType type, double threshold) {
+    if (threshold < 0.0) threshold = 0.0;
+    if (threshold > 1.0) threshold = 1.0;
+
+    auto all = listEntities(type, EntityFilter{});
+    if (all.failed()) {
+        return common::Result<std::vector<DuplicateGroup>>::err(all.error());
+    }
+    std::vector<Entity> active;
+    for (auto& e : all.value()) {
+        if (e.status == "Obsolete") continue;
+        active.push_back(e);
+    }
+    if (active.size() < 2) {
+        return common::Result<std::vector<DuplicateGroup>>::ok({});
+    }
+
+    const size_t n = active.size();
+    UnionFind uf(n);
+    // Pairwise similarity matrix (upper triangle).
+    std::vector<std::vector<double>> sim(n, std::vector<double>(n, 0.0));
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = i + 1; j < n; ++j) {
+            double s = entitySimilarity(active[i], active[j]);
+            sim[i][j] = s;
+            sim[j][i] = s;
+            if (s >= threshold) uf.unite(i, j);
+        }
+    }
+
+    // Collect connected components with >= 2 members.
+    std::map<size_t, std::vector<size_t>> comps;
+    for (size_t i = 0; i < n; ++i) comps[uf.find(i)].push_back(i);
+
+    std::vector<DuplicateGroup> out;
+    for (auto& kv : comps) {
+        if (kv.second.size() < 2) continue;
+        DuplicateGroup g;
+        double maxSim = 0.0;
+        for (size_t i = 0; i < kv.second.size(); ++i) {
+            g.entities.push_back(active[kv.second[i]]);
+            for (size_t j = i + 1; j < kv.second.size(); ++j) {
+                double s = sim[kv.second[i]][kv.second[j]];
+                if (s > maxSim) maxSim = s;
+            }
+        }
+        g.similarity = maxSim;
+        out.push_back(std::move(g));
+    }
+    return common::Result<std::vector<DuplicateGroup>>::ok(std::move(out));
+}
+
+// ---------------------------------------------------------------------------
 // Internal dispatch / helpers
 // ---------------------------------------------------------------------------
 bool TraceLinkService::nodeExists(EntityType type, const std::string& id) {
