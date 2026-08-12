@@ -4,6 +4,8 @@
 
 #include "ui/MatrixView.h"
 
+#include <algorithm>
+
 #include <QFile>
 #include <QFileDialog>
 #include <QHeaderView>
@@ -45,6 +47,49 @@ void MatrixView::setModel(const tracelink::MatrixViewModel& model) {
         }
     }
     resizeColumnsToContents();
+}
+
+void MatrixView::setWiringService(tracelink::UiWiringService* wiring) {
+    wiring_ = wiring;
+}
+
+void MatrixView::setSearch(const QString& text) {
+    cfg_.search = text.toStdString();
+    refreshFiltered();
+}
+
+void MatrixView::setStatusFilter(const QString& status) {
+    cfg_.statusFilter = status.toStdString();
+    refreshFiltered();
+}
+
+void MatrixView::toggleRelation(const QString& relation, bool visible) {
+    const std::string rel = relation.toStdString();
+    auto& hidden = cfg_.hiddenRelations;
+    auto it = std::find(hidden.begin(), hidden.end(), rel);
+    if (visible) {
+        if (it != hidden.end()) hidden.erase(it);
+    } else {
+        if (it == hidden.end()) hidden.push_back(rel);
+    }
+    refreshFiltered();
+}
+
+void MatrixView::saveView(const QString& name) {
+    if (!wiring_) return;
+    wiring_->saveMatrixView(name.toStdString(), cfg_);
+}
+
+void MatrixView::applyView(const QString& viewId) {
+    if (!wiring_) return;
+    auto m = wiring_->applyMatrixView(viewId.toStdString());
+    if (m.isOk()) setModel(m.value());
+}
+
+void MatrixView::refreshFiltered() {
+    if (!wiring_) return;
+    auto m = wiring_->matrixFiltered(cfg_);
+    if (m.isOk()) setModel(m.value());
 }
 
 void MatrixView::exportCsv() {
