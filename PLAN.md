@@ -18,7 +18,7 @@ Tests: `core/test/wp*_tests.cpp` (all currently pass). Schema: append-only migra
 |---|-----|----------------------|----------|--------|-------------|-------|-----------|
 | A | Search + pagination | A1 FTS5 full-text search (ranked); B1 pagination (limit/offset) on all list endpoints | High | TODO | - | - | - |
 | B | Change management | A3 baseline restore/rollback; A4 change-request + review workflow (approve/reject, review queues, link CRs to audit) | High | TODO | - | - | - |
-| C | Hierarchy tree | A2 requirement hierarchy tree: parent/child navigation, subtree ops, reorder | High | TODO | - | - | - |
+| C | Hierarchy tree | A2 requirement hierarchy tree: parent/child navigation, subtree ops, reorder | High | DONE | senior-engineer-wpc | PASS (30/30) | - |
 | D | Coverage + evidence | A5 coverage by verification method; A6 DO-178C evidence package export (matrix+coverage+validation+audit bundle) | Med | TODO | - | - | - |
 | E | API + duplicates | A8 REST API auth / API keys; A9 duplicate/similarity detection | Med | TODO | - | - | - |
 | F | Robustness hardening | B2 typed error codes; B3 input validation & size limits; B4 DB backup/restore; B5 migration safety (dry-run/rollback/checksum); B6 fuzz/edge-case tests; B7 concurrency stress test; B8 structured logging | High | DONE | senior-engineer-wpf | PASS (37/37) | bf45a16 |
