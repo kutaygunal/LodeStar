@@ -31,6 +31,7 @@ lodestar_add_module(lodestar_tracelink
     tracelink/Types.cpp
     tracelink/StateMachine.cpp
     tracelink/TraceLinkService.cpp
+    tracelink/BaselineService.cpp
     tracelink/RulesEngine.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
@@ -167,5 +168,14 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_tracelink)
     target_compile_definitions(lodestar_wp3_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    add_executable(lodestar_wp4_tests
+        test/wp4_audit_baseline_tests.cpp)
+    target_link_libraries(lodestar_wp4_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp4_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()

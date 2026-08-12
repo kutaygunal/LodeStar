@@ -41,7 +41,7 @@ const std::vector<std::string>& statusSet(EntityType t) {
 const std::map<EntityType, std::map<std::string, std::set<std::string>>>& transitionTable() {
     static const std::map<EntityType, std::map<std::string, std::set<std::string>>> kTable = {
         {EntityType::Requirement,
-         {{"Draft", {"Proposed", "Obsolete"}},
+         {{"Draft", {"Proposed", "Approved", "Obsolete"}},
           {"Proposed", {"Approved", "Obsolete"}},
           {"Approved", {"Validated", "Obsolete"}},
           {"Validated", {"Implemented", "Obsolete"}},

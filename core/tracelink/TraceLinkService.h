@@ -47,6 +47,12 @@ public:
     common::Result<std::vector<Link>> linksTo(EntityType type, const std::string& id);
     common::Result<std::vector<Link>> allLinks();
 
+    // --- Audit context -----------------------------------------------------
+    // Stamps the actor + change request id on subsequent mutations until reset
+    // (pass empty strings to clear). Every mutation writes an audit_log row
+    // regardless of context; the context only enriches those rows.
+    void setAuditContext(const std::string& actor, const std::string& changeRequestId);
+
     // --- Status state machine ----------------------------------------------
     bool isLegalTransition(EntityType type, const std::string& from,
                            const std::string& to);
@@ -59,6 +65,20 @@ private:
                                                       const std::string& id);
     common::Result<Entity> dispatchCreate(EntityType type, const Entity& e);
     common::Result<Entity> dispatchUpdate(EntityType type, const Entity& e);
+
+    // Appends one audit_log row (inside the caller's transaction).
+    common::Result<void> writeAudit(const std::string& entityType,
+                                    const std::string& entityId,
+                                    const std::string& action,
+                                    const std::string& field,
+                                    const std::string& oldValue,
+                                    const std::string& newValue);
+    void beginTx();
+    common::Result<void> commitTx();
+    void rollbackTx();
+
+    std::string actor_;
+    std::string changeRequestId_;
 
     persistence::Database& db_;
     persistence::RequirementDao reqDao_;

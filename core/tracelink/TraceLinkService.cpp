@@ -9,6 +9,10 @@
 #include "core/tracelink/TraceLinkService.h"
 
 #include <ctime>
+#include <tuple>
+#include <vector>
+
+#include <sqlite3.h>
 
 #include "core/common/Uuid.h"
 #include "core/tracelink/StateMachine.h"
@@ -240,7 +244,90 @@ TraceLink toLink(const Link& l) {
     return pl;
 }
 
+// Parameterized statement execution used to insert audit rows safely.
+common::Result<void> execBind(sqlite3* db, const std::string& sql,
+                              const std::vector<std::string>& params) {
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        return common::Result<void>::err("prepare failed: " +
+                                         std::string(sqlite3_errmsg(db)));
+    }
+    for (size_t i = 0; i < params.size(); ++i) {
+        sqlite3_bind_text(stmt, static_cast<int>(i + 1), params[i].c_str(),
+                          static_cast<int>(params[i].size()), SQLITE_TRANSIENT);
+    }
+    int rc = sqlite3_step(stmt);
+    std::string msg = sqlite3_errmsg(db);
+    sqlite3_finalize(stmt);
+    if (rc != SQLITE_DONE) {
+        return common::Result<void>::err("step failed: " + msg);
+    }
+    return common::Result<void>::ok();
+}
+
+// Records a changed field as an (old, new) pair keyed by field name.
+void pushChange(std::vector<std::tuple<std::string, std::string, std::string>>& out,
+                const std::string& field, const std::string& a, const std::string& b) {
+    if (a != b) out.emplace_back(field, a, b);
+}
+
+// Field-level diff between an entity's before/after states. Metadata fields
+// (id, version, timestamps, actor stamps) are excluded so only the real change
+// is recorded.
+std::vector<std::tuple<std::string, std::string, std::string>>
+entityFieldChanges(const Entity& a, const Entity& b) {
+    std::vector<std::tuple<std::string, std::string, std::string>> out;
+    pushChange(out, "externalId", a.externalId, b.externalId);
+    pushChange(out, "name", a.name, b.name);
+    pushChange(out, "text", a.text, b.text);
+    pushChange(out, "status", a.status, b.status);
+    pushChange(out, "typeAttr", a.typeAttr, b.typeAttr);
+    pushChange(out, "priority", a.priority, b.priority);
+    pushChange(out, "source", a.source, b.source);
+    pushChange(out, "owner", a.owner, b.owner);
+    pushChange(out, "rationale", a.rationale, b.rationale);
+    pushChange(out, "verificationMethod", a.verificationMethod, b.verificationMethod);
+    pushChange(out, "safetyLevel", a.safetyLevel, b.safetyLevel);
+    pushChange(out, "direction", a.direction, b.direction);
+    pushChange(out, "sourceEntity", a.sourceEntity, b.sourceEntity);
+    pushChange(out, "targetEntity", a.targetEntity, b.targetEntity);
+    pushChange(out, "dataItems", a.dataItems, b.dataItems);
+    pushChange(out, "protocol", a.protocol, b.protocol);
+    pushChange(out, "resultStatus", a.resultStatus, b.resultStatus);
+    pushChange(out, "severity", a.severity, b.severity);
+    pushChange(out, "likelihood", a.likelihood, b.likelihood);
+    pushChange(out, "date", a.date, b.date);
+    pushChange(out, "parentId", a.parentId, b.parentId);
+    pushChange(out, "tags", a.tags, b.tags);
+    return out;
+}
+
 }  // namespace
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+void TraceLinkService::setAuditContext(const std::string& actor,
+                                       const std::string& changeRequestId) {
+    actor_ = actor;
+    changeRequestId_ = changeRequestId;
+}
+
+void TraceLinkService::beginTx() { db_.execute("BEGIN;"); }
+common::Result<void> TraceLinkService::commitTx() { return db_.execute("COMMIT;"); }
+void TraceLinkService::rollbackTx() { db_.execute("ROLLBACK;"); }
+
+common::Result<void> TraceLinkService::writeAudit(
+    const std::string& entityType, const std::string& entityId,
+    const std::string& action, const std::string& field, const std::string& oldValue,
+    const std::string& newValue) {
+    return execBind(db_.handle(),
+                    "INSERT INTO audit_log (id, entity_type, entity_id, action, field, "
+                    "old_value, new_value, actor, timestamp, change_request_id) "
+                    "VALUES (?,?,?,?,?,?,?,?,?,?);",
+                    {newUuid(), entityType, entityId, action, field, oldValue, newValue,
+                     actor_, now(), changeRequestId_});
+}
 
 // ---------------------------------------------------------------------------
 // Entity CRUD
@@ -302,7 +389,23 @@ common::Result<Entity> TraceLinkService::addEntity(const Entity& input) {
     e.version = 1;
     if (e.createdAt.empty()) e.createdAt = now();
     if (e.updatedAt.empty()) e.updatedAt = e.createdAt;
-    return dispatchCreate(e.type, e);
+    beginTx();
+    auto res = dispatchCreate(e.type, e);
+    if (res.failed()) {
+        rollbackTx();
+        return res;
+    }
+    auto audit = writeAudit(toString(e.type), res.value().id, "create", "", "", "");
+    if (audit.failed()) {
+        rollbackTx();
+        return common::Result<Entity>::err(audit.error());
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<Entity>::err(commit.error());
+    }
+    return res;
 }
 
 common::Result<Entity> TraceLinkService::updateEntity(const Entity& data) {
@@ -311,6 +414,7 @@ common::Result<Entity> TraceLinkService::updateEntity(const Entity& data) {
     if (!existingRes.value()) {
         return common::Result<Entity>::err("entity not found: " + data.id);
     }
+    const Entity before = *existingRes.value();
     Entity existing = *existingRes.value();
 
     if (!data.status.empty() && data.status != existing.status) {
@@ -343,7 +447,27 @@ common::Result<Entity> TraceLinkService::updateEntity(const Entity& data) {
     existing.tags = data.tags;
     existing.updatedBy = data.updatedBy;
     existing.updatedAt = now();
-    return dispatchUpdate(data.type, existing);
+    beginTx();
+    auto res = dispatchUpdate(data.type, existing);
+    if (res.failed()) {
+        rollbackTx();
+        return common::Result<Entity>::err(res.error());
+    }
+    // Audit one row per changed field (exact before -> after values).
+    auto changes = entityFieldChanges(before, existing);
+    for (const auto& [field, oldV, newV] : changes) {
+        auto audit = writeAudit(toString(data.type), existing.id, "update", field, oldV, newV);
+        if (audit.failed()) {
+            rollbackTx();
+            return common::Result<Entity>::err(audit.error());
+        }
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<Entity>::err(commit.error());
+    }
+    return res;
 }
 
 common::Result<void> TraceLinkService::removeEntity(EntityType type, const std::string& id) {
@@ -356,8 +480,22 @@ common::Result<void> TraceLinkService::removeEntity(EntityType type, const std::
     e.status = "Obsolete";
     e.version = e.version + 1;
     e.updatedAt = now();
+    beginTx();
     auto res = dispatchUpdate(type, e);
-    if (res.failed()) return common::Result<void>::err(res.error());
+    if (res.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(res.error());
+    }
+    auto audit = writeAudit(toString(type), id, "soft_delete", "", "", "");
+    if (audit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(audit.error());
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(commit.error());
+    }
     return common::Result<void>::ok();
 }
 
@@ -473,8 +611,22 @@ common::Result<Link> TraceLinkService::addLink(const Link& link) {
     if (pl.createdAt.empty()) pl.createdAt = now();
     if (pl.updatedAt.empty()) pl.updatedAt = pl.createdAt;
     pl.version = 1;
+    beginTx();
     auto res = linkDao_.create(pl);
-    if (res.failed()) return common::Result<Link>::err(res.error());
+    if (res.failed()) {
+        rollbackTx();
+        return common::Result<Link>::err(res.error());
+    }
+    auto audit = writeAudit("link", pl.id, "add_link", "", "", "");
+    if (audit.failed()) {
+        rollbackTx();
+        return common::Result<Link>::err(audit.error());
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<Link>::err(commit.error());
+    }
     return common::Result<Link>::ok(fromLink(pl));
 }
 
@@ -490,8 +642,22 @@ common::Result<Link> TraceLinkService::updateLink(const Link& link) {
         return common::Result<Link>::err("invalid link status: " + pl.status);
     }
     pl.updatedAt = now();
+    beginTx();
     auto res = linkDao_.update(pl);
-    if (res.failed()) return common::Result<Link>::err(res.error());
+    if (res.failed()) {
+        rollbackTx();
+        return common::Result<Link>::err(res.error());
+    }
+    auto audit = writeAudit("link", pl.id, "update_link", "", "", "");
+    if (audit.failed()) {
+        rollbackTx();
+        return common::Result<Link>::err(audit.error());
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<Link>::err(commit.error());
+    }
     return common::Result<Link>::ok(fromLink(pl));
 }
 
@@ -503,8 +669,22 @@ common::Result<void> TraceLinkService::removeLink(const std::string& id) {
     pl.status = "Superseded";
     pl.version = pl.version + 1;
     pl.updatedAt = now();
+    beginTx();
     auto res = linkDao_.update(pl);
-    if (res.failed()) return common::Result<void>::err(res.error());
+    if (res.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(res.error());
+    }
+    auto audit = writeAudit("link", id, "remove_link", "", "", "");
+    if (audit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(audit.error());
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(commit.error());
+    }
     return common::Result<void>::ok();
 }
 
@@ -550,14 +730,29 @@ common::Result<void> TraceLinkService::transition(EntityType type, const std::st
         return common::Result<void>::err(toString(type) + " not found: " + id);
     }
     Entity e = *existingRes.value();
+    const std::string oldStatus = e.status;
     if (!canTransition(type, e.status, to)) {
         return common::Result<void>::err(transitionError(type, e.status, to));
     }
     e.status = to;
     e.version = e.version + 1;
     e.updatedAt = now();
+    beginTx();
     auto res = dispatchUpdate(type, e);
-    if (res.failed()) return common::Result<void>::err(res.error());
+    if (res.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(res.error());
+    }
+    auto audit = writeAudit(toString(type), id, "update", "status", oldStatus, to);
+    if (audit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(audit.error());
+    }
+    auto commit = commitTx();
+    if (commit.failed()) {
+        rollbackTx();
+        return common::Result<void>::err(commit.error());
+    }
     return common::Result<void>::ok();
 }
 
