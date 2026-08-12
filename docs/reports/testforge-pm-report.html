@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TestForge — Product Manager Gap Analysis Report</title>
+<style>
+  :root {
+    --ink: #1a2332;
+    --muted: #5b6b7f;
+    --line: #dde4ec;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --brand: #0f4c81;
+    --brand-soft: #e8f0f8;
+    --have: #1e7d46;
+    --have-bg: #e7f5ec;
+    --gap: #b23a2e;
+    --gap-bg: #fbeae8;
+    --commercial: #8a6d1a;
+    --commercial-bg: #faf3dd;
+    --p0: #b23a2e;
+    --p1: #c07a1a;
+    --p2: #5b6b7f;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", -apple-system, Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    background: var(--bg);
+    line-height: 1.55;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+  header.hero {
+    background: linear-gradient(135deg, #0f4c81 0%, #1a6bb0 100%);
+    color: #fff;
+    border-radius: 14px;
+    padding: 40px 36px;
+    margin-bottom: 28px;
+  }
+  header.hero .kicker {
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-size: 12px;
+    opacity: .85;
+    font-weight: 600;
+  }
+  header.hero h1 { margin: 8px 0 6px; font-size: 30px; line-height: 1.2; }
+  header.hero p.sub { margin: 0; opacity: .92; max-width: 760px; font-size: 15px; }
+  .meta {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px;
+  }
+  .meta span {
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.25);
+    padding: 5px 12px; border-radius: 999px; font-size: 12.5px;
+  }
+  .verdict {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 6px solid var(--brand);
+    border-radius: 10px;
+    padding: 22px 26px;
+    margin-bottom: 28px;
+  }
+  .verdict h2 { margin-top: 0; font-size: 20px; }
+  .verdict .score {
+    display: inline-block; background: var(--brand-soft); color: var(--brand);
+    font-weight: 700; padding: 4px 12px; border-radius: 6px; font-size: 14px;
+  }
+  h2.section {
+    font-size: 22px; margin: 40px 0 14px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--brand); color: var(--brand);
+  }
+  h3 { font-size: 17px; margin: 22px 0 8px; }
+  p { margin: 8px 0; }
+  ul { margin: 8px 0 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  table {
+    width: 100%; border-collapse: collapse; background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; overflow: hidden;
+    font-size: 13.5px; margin: 12px 0;
+  }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--brand-soft); color: var(--brand); font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+  .pill.have { background: var(--have-bg); color: var(--have); }
+  .pill.partial { background: var(--commercial-bg); color: var(--commercial); }
+  .pill.gap { background: var(--gap-bg); color: var(--gap); }
+  .area {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    padding: 20px 24px; margin-bottom: 18px;
+  }
+  .area h3 { margin-top: 0; display: flex; align-items: center; gap: 10px; }
+  .area .num {
+    background: var(--brand); color: #fff; width: 28px; height: 28px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center; font-size: 14px; flex: 0 0 auto;
+  }
+  .three {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 12px;
+  }
+  .three .box { border-radius: 8px; padding: 12px 14px; font-size: 13.5px; }
+  .box.have { background: var(--have-bg); border: 1px solid #bfe3cd; }
+  .box.commercial { background: var(--commercial-bg); border: 1px solid #e6d9a8; }
+  .box.gap { background: var(--gap-bg); border: 1px solid #ecc4bf; }
+  .box h4 { margin: 0 0 6px; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  .box.have h4 { color: var(--have); }
+  .box.commercial h4 { color: var(--commercial); }
+  .box.gap h4 { color: var(--gap); }
+  .box ul { margin: 0; padding-left: 16px; }
+  .box li { margin: 3px 0; }
+  .gap-list { list-style: none; padding: 0; margin: 0; }
+  .gap-list li {
+    background: var(--card); border: 1px solid var(--line); border-left: 5px solid var(--p2);
+    border-radius: 8px; padding: 14px 18px; margin-bottom: 12px;
+  }
+  .gap-list li.p0 { border-left-color: var(--p0); }
+  .gap-list li.p1 { border-left-color: var(--p1); }
+  .gap-list li.p2 { border-left-color: var(--p2); }
+  .gap-list .ghead { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .gap-list .gtitle { font-weight: 700; font-size: 15px; }
+  .prio { font-weight: 700; font-size: 12px; padding: 2px 9px; border-radius: 6px; color: #fff; }
+  .prio.p0 { background: var(--p0); }
+  .prio.p1 { background: var(--p1); }
+  .prio.p2 { background: var(--p2); }
+  .effort { margin-left: auto; font-size: 12px; color: var(--muted); background: var(--bg); padding: 3px 9px; border-radius: 6px; }
+  .gap-list .gbody { margin-top: 8px; font-size: 13.5px; color: #33404f; }
+  .gap-list .gbody .why { color: var(--gap); font-weight: 600; }
+  .roadmap { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 20px 24px; }
+  .phase { display: flex; gap: 16px; padding: 12px 0; border-bottom: 1px dashed var(--line); }
+  .phase:last-child { border-bottom: none; }
+  .phase .tag { flex: 0 0 120px; font-weight: 700; color: var(--brand); }
+  .phase .desc { flex: 1; }
+  .phase .desc ul { margin: 4px 0 0; }
+  .note { background: var(--brand-soft); border-left: 4px solid var(--brand); padding: 12px 16px; border-radius: 6px; font-size: 13.5px; margin: 12px 0; }
+  .footer { margin-top: 40px; color: var(--muted); font-size: 12.5px; text-align: center; border-top: 1px solid var(--line); padding-top: 18px; }
+  .toc { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px 24px; margin-bottom: 28px; }
+  .toc h2 { margin-top: 0; font-size: 16px; }
+  .toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 30px; }
+  .toc a { color: var(--brand); text-decoration: none; }
+  .toc a:hover { text-decoration: underline; }
+  @media (max-width: 760px) {
+    .three { grid-template-columns: 1fr; }
+    .toc ol { columns: 1; }
+    .phase { flex-direction: column; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <div class="kicker">Lodestar GNSS/SBAS Platform · Product Management Review</div>
+  <h1>TestForge — IT&amp;V Plan, Execution &amp; Reporting Gap Analysis</h1>
+  <p class="sub">An honest, commercial-grade assessment of the TestForge module against leading
+  test-management and verification tools (VectorCAST, Rapita RapiTest, LDRA, Jama, Polarion,
+  Codebeamer, TestRail, NI TestStand, Keysight).</p>
+  <div class="meta">
+    <span>Module: TestForge</span>
+    <span>Scope: IT&amp;V lifecycle</span>
+    <span>Benchmark: 9 commercial tools</span>
+    <span>Type: Gap analysis (no code changes)</span>
+  </div>
+</header>
+
+<div class="verdict">
+  <h2>Executive Summary</h2>
+  <p><span class="score">Maturity: 2.5 / 5 — "Functional prototype, not yet a verification product"</span></p>
+  <p><strong>Verdict.</strong> TestForge is a clean, well-factored <em>engine</em> that proves the core
+  IT&amp;V loop — <strong>plan → execute → report → persist</strong> — and it already wires into
+  TraceLink (executed coverage) and AssureCheck (compliance evidence). That is a genuinely useful
+  foundation. However, as a <em>product</em> it is a single-threaded, single-user, offline prototype.
+  It has <strong>no test-case design intelligence, no parallel or real-time execution, no code
+  coverage, no certification-ready evidence, no workflow/lifecycle, no dedicated UI, and no
+  CI/CD or external-tool execution path</strong>. A verification lead or DO-178C auditor would not
+  accept it today for anything beyond internal smoke testing.</p>
+  <p><strong>Top 5 gaps (see prioritized list for the full set):</strong></p>
+  <ul>
+    <li><strong>G1 — No test-case design intelligence.</strong> PlanGenerator only copies a supplied
+      check list into steps; it cannot derive equivalence classes, boundary values, or MC/DC cases
+      from a requirement or source. This is the single biggest authoring gap vs. VectorCAST/LDRA/Rapita.</li>
+    <li><strong>G2 — No real execution path.</strong> TestRunner consumes a single
+      <code>IMeasurementProvider</code>; the Spirent/R&amp;S/Skydel adapters exist but are <em>not wired</em>
+      into execution. No HIL, no parallel runs, no deterministic timing, no data acquisition.</li>
+    <li><strong>G3 — No code coverage.</strong> Coverage is requirement-level only (via TraceLink).
+      Statement/decision/MC/DC structural coverage — the core of DO-178C verification — is absent.</li>
+    <li><strong>G4 — No certification-ready reporting.</strong> Output is Markdown + JSON only. No
+      DO-178C evidence package, no result-to-requirement traceability in the report, no PDF/Word/ReQIF export.</li>
+    <li><strong>G5 — No workflow or governance.</strong> No test-case lifecycle, review/approval,
+      baselines, change-impact, RBAC, or audit trail. No dedicated TestForge UI.</li>
+  </ul>
+  <p><strong>Strategic recommendation.</strong> Do not try to out-build VectorCAST or TestStand on
+  execution and coverage. Position TestForge as the <strong>orchestration and evidence layer</strong>:
+  keep the plan/execute/report loop, add test-case design heuristics, wire the existing RF adapters
+  into execution, delegate structural coverage to an external engine (or add a lightweight
+  statement/decision pass), and invest in workflow + certification reporting. That is the 
+  differentiated, achievable path.</p>
+</div>
+
+<div class="toc">
+  <h2>Contents</h2>
+  <ol>
+    <li><a href="#table">Capability vs. Commercial Tools Comparison</a></li>
+    <li><a href="#a1">Test Authoring</a></li>
+    <li><a href="#a2">Test Execution</a></li>
+    <li><a href="#a3">Measurement &amp; Analysis</a></li>
+    <li><a href="#a4">Coverage</a></li>
+    <li><a href="#a5">Reporting</a></li>
+    <li><a href="#a6">Workflow</a></li>
+    <li><a href="#a7">Integration</a></li>
+    <li><a href="#a8">UX</a></li>
+    <li><a href="#a9">Commercial Readiness</a></li>
+    <li><a href="#gaps">Prioritized Gap List</a></li>
+    <li><a href="#roadmap">Recommended Roadmap</a></li>
+  </ol>
+</div>
+
+<h2 class="section" id="table">Capability vs. Commercial Tools Comparison</h2>
+<p>Legend: <span class="pill have">Have</span> = present &amp; usable ·
+<span class="pill partial">Partial</span> = present but limited ·
+<span class="pill gap">Gap</span> = missing / not commercial-grade.</p>
+<table>
+  <thead>
+    <tr>
+      <th>Capability</th>
+      <th>TestForge (current)</th>
+      <th>Commercial benchmark</th>
+      <th>Rating</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Plan / procedure generation</td><td>Checks → ordered steps (thin copy)</td><td>Auto test-case generation from source/requirements (VectorCAST, LDRA, Rapita)</td><td><span class="pill partial">Partial</span></td></tr>
+    <tr><td>Test-case design (equivalence, boundary, MC/DC)</td><td>None</td><td>Core feature (VectorCAST, LDRA, Rapita, QA Systems)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>Reusable test libraries / parameterized tests</td><td>None</td><td>Standard (TestRail, Jama, TestStand, Polarion)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>Execution engine</td><td>Sequential, single provider, offline mock</td><td>Parallel, HIL, real-time, DAQ (TestStand, Keysight, VectorCAST)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>RF tool integration (Spirent/R&amp;S/Skydel)</td><td>Adapters exist but not wired to runner</td><td>Native remote control (Spirent, R&amp;S, Skydel)</td><td><span class="pill partial">Partial</span></td></tr>
+    <tr><td>Pass/fail thresholds &amp; tolerances</td><td>Yes (|actual−expected| ≤ tolerance)</td><td>Yes + multi-criteria, statistical</td><td><span class="pill have">Have</span></td></tr>
+    <tr><td>Statistical analysis / anomaly detection</td><td>None</td><td>Yes (Keysight, Rapita timing, NI)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>Requirement coverage</td><td>Yes via TraceLink (designed/verified/executed)</td><td>Yes (Jama, Polarion, Codebeamer)</td><td><span class="pill have">Have</span></td></tr>
+    <tr><td>Code coverage (statement/decision/MC/DC)</td><td>None</td><td>Core (VectorCAST, LDRA, Rapita)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>Certification-ready reports / DO-178C evidence</td><td>Markdown + JSON only</td><td>Yes (LDRA, Rapita, VectorCAST, Polarion)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>Result→requirement traceability in report</td><td>Indirect (via coverage table)</td><td>Native (Jama, Polarion, Codebeamer)</td><td><span class="pill partial">Partial</span></td></tr>
+    <tr><td>Test-case lifecycle / review / approval</td><td>None</td><td>Standard (Jama, Polarion, Codebeamer, TestRail)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>Baselines &amp; change impact</td><td>None (version string only)</td><td>Standard (Jama, Polarion, Codebeamer)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>RBAC / audit trail</td><td>None in TestForge (RBAC exists in TraceLink)</td><td>Standard (all enterprise tools)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>Dedicated UI (plan editor, run dashboard, results browser)</td><td>None</td><td>Rich (TestRail, TestStand, Jama)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>CI/CD integration</td><td>None</td><td>Standard (VectorCAST, TestStand, Jenkins plugins)</td><td><span class="pill gap">Gap</span></td></tr>
+    <tr><td>Persistence &amp; transactions</td><td>Yes (SQLite, transactional DAO)</td><td>Yes (enterprise DBs)</td><td><span class="pill have">Have</span></td></tr>
+  </tbody>
+</table>
+
+<h2 class="section">Deep-Dive per Area</h2>
+
+<div class="area" id="a1">
+  <h3><span class="num">1</span> Test Authoring</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>PlanGenerator builds a TestProcedure from a scenario id + a list of checks.</li>
+      <li>Each check becomes an ordered, UUID'd TestStep with metric, expected value, tolerance.</li>
+      <li>Convenience <code>checksFromObjective</code> for ad-hoc smoke checks.</li>
+      <li>Version string on procedures; objective text captured.</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>VectorCAST / LDRA / Rapita auto-generate test cases from source code and requirements.</li>
+      <li>Equivalence partitioning, boundary-value analysis, decision tables, MC/DC case generation.</li>
+      <li>Reusable test libraries, templates, and parameterized / data-driven tests (TestRail, Jama, TestStand).</li>
+      <li>Test-case editors with preconditions, steps, expected results, attachments.</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>No test-case design intelligence — PlanGenerator is a thin "checks → steps" copier.</li>
+      <li>No equivalence / boundary / MC/DC derivation from a requirement or source.</li>
+      <li>No reusable libraries, templates, or parameterized tests.</li>
+      <li>No test-case editor; authoring is code-level only.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> The automation claim ("~90% authoring reduction") is not yet
+  credible: the generator does not <em>design</em> tests, it merely formats a caller-supplied list.
+  This is the highest-leverage authoring gap.</p>
+</div>
+
+<div class="area" id="a2">
+  <h3><span class="num">2</span> Test Execution</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>TestRunner executes steps sequentially against an <code>IMeasurementProvider</code>.</li>
+      <li>Clean Passed / Failed / Blocked semantics; run-level terminal status.</li>
+      <li>MockMeasurementProvider for offline / smoke runs.</li>
+      <li>Run start/finish timestamps captured.</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>Parallel execution across targets/cores (VectorCAST, TestStand).</li>
+      <li>Hardware-in-the-loop and real-time execution (TestStand, Keysight, NI).</li>
+      <li>Deterministic timing, scheduling, and data acquisition (NI, Keysight).</li>
+      <li>Live instrument control and result streaming.</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>Single-threaded, sequential only — no parallel or scheduled runs.</li>
+      <li>No HIL, no real-time, no deterministic timing, no data acquisition.</li>
+      <li>RF adapters (Spirent/R&amp;S/Skydel) are <em>not wired</em> into TestRunner.</li>
+      <li>No live streaming; results are computed after the fact.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> Execution is a proof-of-concept. The adapters exist but the
+  execution engine never calls them, so the platform cannot actually drive a GNSS simulator today.</p>
+</div>
+
+<div class="area" id="a3">
+  <h3><span class="num">3</span> Measurement &amp; Analysis</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>Per-step metric capture with expected value and tolerance.</li>
+      <li>Pass/fail decision: |actual − expected| ≤ tolerance.</li>
+      <li>Blocked handling when a metric is unavailable.</li>
+      <li>Deviation reported in the failure message.</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>Multi-sample statistics, mean/σ, min/max, histograms (Keysight, NI).</li>
+      <li>Trend / regression analysis across runs (Rapita timing, TestRail).</li>
+      <li>Anomaly detection and uncertainty quantification.</li>
+      <li>Complex pass criteria (multiple thresholds, logical conditions).</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>Single scalar comparison only — no statistical analysis.</li>
+      <li>No trend, regression, or anomaly detection.</li>
+      <li>No uncertainty / confidence quantification.</li>
+      <li>No multi-sample or time-series measurement model.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> Adequate for a single pass/fail check; insufficient for the
+  statistical rigor a GNSS verification program expects (e.g. CEP/95, repeatability).</p>
+</div>
+
+<div class="area" id="a4">
+  <h3><span class="num">4</span> Coverage</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>Requirement coverage via TraceLink: designed / executed / verified.</li>
+      <li>Executed coverage reflects real TestForge run results (test_run_coverage, migration 017).</li>
+      <li>Latest-run-governs semantics for verified status.</li>
+      <li>Wired into AssureCheck evidence.</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>Structural code coverage: statement, decision, branch, MC/DC (VectorCAST, LDRA, Rapita).</li>
+      <li>Requirement-to-test traceability with coverage % (Jama, Polarion, Codebeamer).</li>
+      <li>Coverage gap highlighting and analysis.</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>No code coverage at all — statement/decision/MC/DC absent.</li>
+      <li>Coverage is requirement-level only; no structural metrics.</li>
+      <li>No coverage gap analysis or drill-down.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> The requirement-coverage integration is a genuine strength and
+  differentiator. But DO-178C verification hinges on structural coverage, which is entirely missing.</p>
+</div>
+
+<div class="area" id="a5">
+  <h3><span class="num">5</span> Reporting</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>Markdown report (header, counts, per-step table).</li>
+      <li>Structured JSON report.</li>
+      <li>TestReport summary with conclusion.</li>
+      <li>Persisted runs enable historical reporting.</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>Certification-ready DO-178C evidence packages (LDRA, Rapita, VectorCAST).</li>
+      <li>Result-to-requirement traceability in the report (Jama, Polarion).</li>
+      <li>PDF / Word / HTML / ReQIF / CSV export.</li>
+      <li>Sign-off and approval workflow on reports.</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>No certification-ready evidence package.</li>
+      <li>No result→requirement traceability embedded in the report.</li>
+      <li>No PDF/Word/ReQIF export (Markdown + JSON only).</li>
+      <li>No sign-off / approval on reports.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> Reporting is developer-friendly but not auditor-friendly. The
+  AssureCheck module produces richer HTML/CSV/JSON compliance reports; TestForge should reuse that
+  pattern and add traceability + export.</p>
+</div>
+
+<div class="area" id="a6">
+  <h3><span class="num">6</span> Workflow</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>Procedure version string.</li>
+      <li>Run status lifecycle (Pending → Running → Passed/Failed/Blocked).</li>
+      <li>Transactional persistence of procedures and runs.</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>Test-case lifecycle: draft → review → approved → obsolete (Jama, Polarion, Codebeamer).</li>
+      <li>Review / approval with sign-off and audit trail.</li>
+      <li>Baselines and change-impact analysis on tests.</li>
+      <li>Multi-user concurrency control.</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>No test-case lifecycle states.</li>
+      <li>No review / approval workflow.</li>
+      <li>No baselines or change-impact on tests.</li>
+      <li>No multi-user / concurrency control.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> Governance is essentially absent. A verification program cannot
+  demonstrate controlled change without lifecycle, review, and baselines.</p>
+</div>
+
+<div class="area" id="a7">
+  <h3><span class="num">7</span> Integration</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>ScenarioForge: procedures reference a scenario id.</li>
+      <li>TraceLink: executed coverage wiring (test_run_coverage).</li>
+      <li>AssureCheck: evidence pulls TestForge run results.</li>
+      <li>RF adapters (Spirent/R&amp;S/Skydel) exist in the adapters layer.</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>Native RF tool remote control (Spirent, R&amp;S, Skydel).</li>
+      <li>CI/CD integration (VectorCAST, TestStand, Jenkins plugins).</li>
+      <li>ALM / requirements integration (Jama, Polarion, Codebeamer).</li>
+      <li>Test data management and external test-case import.</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>RF adapters not wired into TestRunner execution.</li>
+      <li>No CI/CD integration or CLI for headless runs.</li>
+      <li>No REST API for TestForge (AssureCheck has one; TestForge does not).</li>
+      <li>No external test-case import / test data management.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> Internal integration (TraceLink, AssureCheck) is good. External
+  integration (RF tools, CI/CD, API) is the missing half — and the adapters are already 80% there.</p>
+</div>
+
+<div class="area" id="a8">
+  <h3><span class="num">8</span> UX</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>No dedicated TestForge UI.</li>
+      <li>TraceLink UI views exist (Graph, Matrix, Coverage Dashboard, Impact, Baseline Diff).</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>Test plan editor (TestStand sequence editor, TestRail).</li>
+      <li>Run dashboard with live status (TestRail, Jama).</li>
+      <li>Results browser with gap highlighting (VectorCAST, LDRA).</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>No test plan editor.</li>
+      <li>No run dashboard.</li>
+      <li>No results browser or coverage gap highlighting.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> TestForge is invisible in the UI. The TraceLink views prove the
+  team can build good Qt views; TestForge needs the same treatment.</p>
+</div>
+
+<div class="area" id="a9">
+  <h3><span class="num">9</span> Commercial Readiness</h3>
+  <div class="three">
+    <div class="box have"><h4>Have</h4><ul>
+      <li>Clean, testable C++17 core with unit + smoke tests.</li>
+      <li>Transactional SQLite persistence.</li>
+      <li>Integrates with TraceLink and AssureCheck.</li>
+    </ul></div>
+    <div class="box commercial"><h4>Commercial</h4><ul>
+      <li>Audit trail and RBAC (all enterprise tools).</li>
+      <li>Certification evidence and sign-off.</li>
+      <li>Multi-user, concurrency, enterprise DB.</li>
+      <li>Support, docs, training, licensing.</li>
+    </ul></div>
+    <div class="box gap"><h4>Gap</h4><ul>
+      <li>No audit trail or RBAC in TestForge.</li>
+      <li>No certification evidence or sign-off.</li>
+      <li>No multi-user / concurrency control.</li>
+      <li>No REST API, CLI, or CI/CD entry point.</li>
+    </ul></div>
+  </div>
+  <p><strong>Assessment.</strong> A verification lead or auditor would find the module technically
+  sound but operationally incomplete: no governance, no evidence, no external entry point.</p>
+</div>
+
+<h2 class="section" id="gaps">Prioritized Gap List</h2>
+<p>Priorities: <span class="prio p0">P0</span> blocks the core value proposition ·
+<span class="prio p1">P1</span> required for commercial credibility ·
+<span class="prio p2">P2</span> differentiators / polish. Effort is a relative engineering estimate.</p>
+<ul class="gap-list">
+
+  <li class="p0">
+    <div class="ghead"><span class="prio p0">P0</span><span class="gtitle">G1 — Test-case design intelligence</span><span class="effort">Effort: M (2–3 sprints)</span></div>
+    <div class="gbody">PlanGenerator must derive test cases from a requirement/objective — equivalence
+    partitioning, boundary-value analysis, and (for software) MC/DC case generation. <span class="why">Why:</span>
+    without it the "auto-authoring" claim is hollow and the module cannot compete with VectorCAST/LDRA/Rapita.</div>
+  </li>
+
+  <li class="p0">
+    <div class="ghead"><span class="prio p0">P0</span><span class="gtitle">G2 — Wire RF adapters into execution</span><span class="effort">Effort: M (2 sprints)</span></div>
+    <div class="gbody">Connect Spirent/R&amp;S/Skydel adapters to <code>IMeasurementProvider</code> so
+    TestRunner can drive a real GNSS simulator and read live measurements. <span class="why">Why:</span>
+    the platform's core promise is automating real IT&amp;V; today it only runs against a mock.</div>
+  </li>
+
+  <li class="p0">
+    <div class="ghead"><span class="prio p0">P0</span><span class="gtitle">G3 — Structural code coverage (statement/decision/MC/DC)</span><span class="effort">Effort: L (3–4 sprints)</span></div>
+    <div class="gbody">Add a lightweight statement/decision coverage pass, or integrate an external
+    coverage engine, and surface MC/DC metrics. <span class="why">Why:</span> DO-178C verification
+    is defined by structural coverage; requirement-level coverage alone is insufficient.</div>
+  </li>
+
+  <li class="p0">
+    <div class="ghead"><span class="prio p0">P0</span><span class="gtitle">G4 — Certification-ready reporting + traceability</span><span class="effort">Effort: M (2 sprints)</span></div>
+    <div class="gbody">Produce DO-178C-style evidence packages with result→requirement traceability,
+    and add PDF/Word/ReQIF export (reuse AssureCheck's ReportService pattern). <span class="why">Why:</span>
+    auditors need traceable, exportable evidence, not Markdown.</div>
+  </li>
+
+  <li class="p0">
+    <div class="ghead"><span class="prio p0">P0</span><span class="gtitle">G5 — Workflow: lifecycle, review, baselines, RBAC, audit</span><span class="effort">Effort: L (3–4 sprints)</span></div>
+    <div class="gbody">Add test-case lifecycle states, review/approval, baselines, change-impact,
+    RBAC, and an audit trail. <span class="why">Why:</span> no governance means no controlled change,
+    which is a hard blocker for certification and multi-user use.</div>
+  </li>
+
+  <li class="p1">
+    <div class="ghead"><span class="prio p1">P1</span><span class="gtitle">G6 — Dedicated TestForge UI</span><span class="effort">Effort: L (3–4 sprints)</span></div>
+    <div class="gbody">Test plan editor, run dashboard, and results browser with coverage-gap
+    highlighting, matching the quality of the existing TraceLink Qt views. <span class="why">Why:</span>
+    the module is currently invisible to users.</div>
+  </li>
+
+  <li class="p1">
+    <div class="ghead"><span class="prio p1">P1</span><span class="gtitle">G7 — Parallel &amp; scheduled execution</span><span class="effort">Effort: M (2 sprints)</span></div>
+    <div class="gbody">Support parallel test runs and scheduled/headless execution. <span class="why">Why:</span>
+    real verification programs run many tests; sequential single-thread is a throughput blocker.</div>
+  </li>
+
+  <li class="p1">
+    <div class="ghead"><span class="prio p1">P1</span><span class="gtitle">G8 — REST API + CLI for TestForge</span><span class="effort">Effort: M (2 sprints)</span></div>
+    <div class="gbody">Expose plan/run/report via REST (mirroring AssureCheck's API server) and a
+    headless CLI. <span class="why">Why:</span> enables CI/CD and external-tool integration.</div>
+  </li>
+
+  <li class="p1">
+    <div class="ghead"><span class="prio p1">P1</span><span class="gtitle">G9 — Statistical analysis &amp; anomaly detection</span><span class="effort">Effort: M (2 sprints)</span></div>
+    <div class="gbody">Add multi-sample statistics (mean/σ, min/max, histograms), trend/regression
+    across runs, and basic anomaly detection. <span class="why">Why:</span> GNSS verification needs
+    statistical rigor (CEP/95, repeatability).</div>
+  </li>
+
+  <li class="p2">
+    <div class="ghead"><span class="prio p2">P2</span><span class="gtitle">G10 — Reusable test libraries &amp; parameterized tests</span><span class="effort">Effort: M (2 sprints)</span></div>
+    <div class="gbody">Support reusable test libraries, templates, and data-driven/parameterized
+    tests. <span class="why">Why:</span> reduces authoring effort and matches TestRail/Jama expectations.</div>
+  </li>
+
+  <li class="p2">
+    <div class="ghead"><span class="prio p2">P2</span><span class="gtitle">G11 — CI/CD integration</span><span class="effort">Effort: S (1 sprint)</span></div>
+    <div class="gbody">Jenkins plugin / pipeline step to trigger TestForge runs and publish results.
+    <span class="why">Why:</span> continuous verification in the dev loop.</div>
+  </li>
+
+  <li class="p2">
+    <div class="ghead"><span class="prio p2">P2</span><span class="gtitle">G12 — External test-case import &amp; test data management</span><span class="effort">Effort: M (2 sprints)</span></div>
+    <div class="gbody">Import test cases from CSV/ReQIF and manage test data sets. <span class="why">Why:</span>
+    interoperability with existing test assets.</div>
+  </li>
+
+</ul>
+
+<h2 class="section" id="roadmap">Recommended Roadmap</h2>
+<div class="roadmap">
+  <div class="phase">
+    <div class="tag">Phase 1 · Foundation</div>
+    <div class="desc">
+      <strong>Make the core loop real.</strong>
+      <ul>
+        <li>Wire RF adapters into TestRunner (G2) — real execution against Spirent/R&amp;S/Skydel.</li>
+        <li>Add test-case design heuristics: equivalence + boundary derivation (G1, first slice).</li>
+        <li>Add REST API + CLI (G8) for headless/CI entry.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="tag">Phase 2 · Credibility</div>
+    <div class="desc">
+      <strong>Become auditor-acceptable.</strong>
+      <ul>
+        <li>Certification-ready reporting with result→requirement traceability + PDF/Word/ReQIF (G4).</li>
+        <li>Workflow: lifecycle, review/approval, baselines, RBAC, audit (G5).</li>
+        <li>Structural code coverage — statement/decision first, MC/DC next (G3).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="tag">Phase 3 · Scale &amp; UX</div>
+    <div class="desc">
+      <strong>Make it usable and fast.</strong>
+      <ul>
+        <li>Dedicated TestForge UI: plan editor, run dashboard, results browser (G6).</li>
+        <li>Parallel &amp; scheduled execution (G7).</li>
+        <li>Statistical analysis &amp; anomaly detection (G9).</li>
+      </ul>
+    </div>
+  </div>
+  <div class="phase">
+    <div class="tag">Phase 4 · Differentiate</div>
+    <div class="desc">
+      <strong>Own the integration layer.</strong>
+      <ul>
+        <li>Reusable libraries &amp; parameterized tests (G10).</li>
+        <li>CI/CD integration (G11).</li>
+        <li>External test-case import &amp; test data management (G12).</li>
+        <li>Full MC/DC + coverage gap analysis (G3 complete).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="note">
+  <strong>Positioning note.</strong> TestForge should not try to out-build VectorCAST (structural
+  coverage) or TestStand (execution) head-on. Its durable advantage is the <strong>integrated
+  IT&amp;V loop</strong> — plan, execute, and report with requirement coverage and compliance evidence
+  in one place. The roadmap above prioritizes making that loop real (execution + design), then
+  trustworthy (evidence + governance), then scalable (UI + parallel), then differentiated (libraries + CI).
+</div>
+
+<div class="footer">
+  Lodestar · TestForge Product Manager Gap Analysis · Generated by pm-testforge · No source code modified.
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lodestar — 4-Sprint Plan for Missing Work</title>
+<style>
+  :root{
+    --ink:#1a2233; --muted:#5b6472; --line:#e3e7ee; --bg:#f6f8fb;
+    --card:#ffffff; --accent:#1f6feb; --accent-soft:#e8f0fe;
+    --good:#1a7f37; --good-soft:#e6f6ec; --warn:#b45309; --warn-soft:#fdf3e3;
+    --bad:#c62828; --bad-soft:#fdecec; --p0:#c62828; --p1:#b45309; --p2:#1f6feb;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55;font-size:15px}
+  .wrap{max-width:1080px;margin:0 auto;padding:32px 28px 80px}
+  header.hero{background:linear-gradient(135deg,#0f2a52,#1f6feb 70%,#3b8cff);color:#fff;border-radius:14px;padding:36px 40px;margin-bottom:28px}
+  header.hero h1{margin:0 0 6px;font-size:30px;letter-spacing:.2px}
+  header.hero .sub{opacity:.92;font-size:16px;margin:0 0 18px}
+  .meta{display:flex;gap:22px;flex-wrap:wrap;margin-top:18px;font-size:13px;opacity:.9}
+  .meta b{font-weight:700}
+  h2{font-size:22px;margin:44px 0 14px;padding-bottom:8px;border-bottom:2px solid var(--line)}
+  h3{font-size:17px;margin:26px 0 10px}
+  p{margin:8px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px 24px;margin:16px 0;box-shadow:0 1px 3px rgba(20,40,80,.05)}
+  .sprint{border-left:6px solid var(--accent)}
+  .sprint.s1{border-left-color:#c62828}
+  .sprint.s2{border-left-color:#b45309}
+  .sprint.s3{border-left-color:#1f6feb}
+  .sprint.s4{border-left-color:#1a7f37}
+  .sprint .head{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+  .sprint .num{font-size:13px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--muted)}
+  .sprint h3{margin:0;font-size:20px}
+  .sprint .goal{color:var(--muted);font-size:14px;margin:4px 0 12px}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;background:var(--card)}
+  th,td{border:1px solid var(--line);padding:9px 11px;text-align:left;vertical-align:top}
+  th{background:#eef2f8;font-weight:700;font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+  tr:nth-child(even) td{background:#fafbfd}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap}
+  .pill.p0{background:var(--bad-soft);color:var(--p0)}
+  .pill.p1{background:var(--warn-soft);color:var(--p1)}
+  .pill.p2{background:var(--accent-soft);color:var(--p2)}
+  .mod{font-size:11px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--muted)}
+  .callout{border-left:4px solid var(--accent);background:var(--accent-soft);padding:12px 16px;border-radius:0 8px 8px 0;margin:14px 0}
+  .callout.good{border-color:var(--good);background:var(--good-soft)}
+  .callout.warn{border-color:var(--warn);background:var(--warn-soft)}
+  .callout.bad{border-color:var(--bad);background:var(--bad-soft)}
+  ul,ol{margin:8px 0 8px 22px;padding:0}
+  li{margin:4px 0}
+  .toc{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 24px}
+  .toc a{color:var(--accent);text-decoration:none}
+  .toc a:hover{text-decoration:underline}
+  .foot{margin-top:48px;padding-top:16px;border-top:1px solid var(--line);color:var(--muted);font-size:12.5px}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin:18px 0}
+  .kpi .box{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;text-align:center}
+  .kpi .num{font-size:24px;font-weight:800;color:var(--accent)}
+  .kpi .lbl{font-size:12px;color:var(--muted);margin-top:2px}
+  .done{color:var(--good);font-weight:600}
+  .todo{color:var(--bad);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>Lodestar — 4-Sprint Plan for the Missing Work</h1>
+  <p class="sub">A sequenced execution plan that turns the verified engineering core into a runnable, trustworthy, collaborative, sellable product. Built from the four PM gap analyses (Platform · ScenarioForge · TestForge · AssureCheck).</p>
+  <div class="meta">
+    <span><b>Source:</b> platform-pm-report · scenarioforge-pm-report · testforge-pm-report · assurecheck-pm-report</span>
+    <span><b>Cadence:</b> 4 sprints · 2 weeks each</span>
+    <span><b>Principle:</b> Make it run → make it execute → make it trustworthy → make it sellable</span>
+  </div>
+</header>
+
+<div class="toc">
+  <b>Contents</b>
+  <ol>
+    <li><a href="#overview">Overview &amp; sequencing logic</a></li>
+    <li><a href="#s1">Sprint 1 — Make it run</a></li>
+    <li><a href="#s2">Sprint 2 — Make it execute</a></li>
+    <li><a href="#s3">Sprint 3 — Make it trustworthy</a></li>
+    <li><a href="#s4">Sprint 4 — Make it collaborative &amp; sellable</a></li>
+    <li><a href="#deps">Dependency map &amp; definition of done</a></li>
+  </ol>
+</div>
+
+<!-- ===================== OVERVIEW ===================== -->
+<h2 id="overview">1. Overview &amp; sequencing logic</h2>
+
+<p>The four reports agree on one thing: the engineering core is real, but the <b>market-facing surface is missing</b>. The gaps cluster into four layers that must be built in order, because each layer depends on the one before it:</p>
+
+<div class="kpi">
+  <div class="box"><div class="num">S1</div><div class="lbl">Make it run — a demoable app</div></div>
+  <div class="box"><div class="num">S2</div><div class="lbl">Make it execute — real IT&amp;V loop</div></div>
+  <div class="box"><div class="num">S3</div><div class="lbl">Make it trustworthy — certification</div></div>
+  <div class="box"><div class="num">S4</div><div class="lbl">Make it sellable — multi-user + web</div></div>
+</div>
+
+<div class="callout warn">
+  <b>Sequencing logic.</b> You cannot add multi-user collaboration (S4) before there is a runnable app (S1). You cannot prove certification (S3) before the execution loop is real (S2). And you cannot sell (S4) before the headline features run (S1–S2). Each sprint ends with a <b>demonstrable increment</b>.
+</div>
+
+<p>Each sprint below lists the work items by module, with the priority taken from the source reports. Effort is a relative estimate for a small team. The <b>definition of done</b> for each sprint is a concrete, demoable outcome.</p>
+
+<!-- ===================== SPRINT 1 ===================== -->
+<h2 id="s1">2. Sprint 1 — Make it run</h2>
+<div class="card sprint s1">
+  <div class="head"><span class="num">Sprint 1</span><h3>Make it run</h3></div>
+  <p class="goal"><b>Goal:</b> Turn the verified libraries into a runnable desktop application with the two headline differentiators (RiskAI, IntegrateHub) no longer stubs, and one real vendor integration proven end-to-end.</p>
+
+  <table>
+    <thead><tr><th style="width:8%">Pri</th><th style="width:20%">Module</th><th>Work item</th><th style="width:12%">Effort</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">Platform</td><td><b>Build the desktop Qt app.</b> Enable <code>LODESTAR_BUILD_UI</code>, wire MainWindow to the service API, and surface the existing TraceLink views (Graph, Matrix, Coverage, Impact, Baseline Diff). This is the single biggest blocker — there is no runnable product today.</td><td>6–10 wks</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">Platform</td><td><b>Make adapters functional.</b> Implement real <code>invoke()</code> logic for at least one vendor (start with Skydel — software-defined, easiest to test) and the LLM adapter. Prove one end-to-end RF injection.</td><td>6–10 wks</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">Platform</td><td><b>Implement RiskAI (first slice).</b> LLM-assisted FMEA/hazard — the flagship differentiator is a 5-line stub. Ship a working first slice: hazard input → LLM call → FMEA table.</td><td>6–8 wks</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">Platform</td><td><b>Implement IntegrateHub (first slice).</b> Cross-disciplinary issue/coordination hub — the second differentiator is a stub. Ship a working issue/coordination model.</td><td>4–6 wks</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">Platform</td><td><b>Validate real-time / determinism.</b> Add real-time benchmarks and a hardware-in-the-loop smoke test to prove the core promise.</td><td>4–6 wks</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout good"><b>Definition of done:</b> A runnable desktop app opens and shows TraceLink data. RiskAI produces an FMEA table from a hazard via a real LLM call. One vendor adapter drives a real (or simulated) RF injection. Real-time benchmark numbers are recorded.</div>
+</div>
+
+<!-- ===================== SPRINT 2 ===================== -->
+<h2 id="s2">3. Sprint 2 — Make it execute</h2>
+<div class="card sprint s2">
+  <div class="head"><span class="num">Sprint 2</span><h3>Make it execute</h3></div>
+  <p class="goal"><b>Goal:</b> Close the end-to-end IT&amp;V loop — a scenario actually drives a real execution path, and the compliance engine stops guessing.</p>
+
+  <table>
+    <thead><tr><th style="width:8%">Pri</th><th style="width:20%">Module</th><th>Work item</th><th style="width:12%">Effort</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">TestForge</td><td><b>Wire RF adapters into execution (G2).</b> Connect Spirent/R&amp;S/Skydel adapters to <code>IMeasurementProvider</code> so TestRunner drives a real GNSS simulator and reads live measurements.</td><td>2 sprints</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">TestForge</td><td><b>Test-case design intelligence (G1, first slice).</b> PlanGenerator derives equivalence classes and boundary values from a requirement/objective — not just copies a check list.</td><td>2–3 sprints</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">TestForge</td><td><b>REST API + CLI (G8).</b> Expose plan/run/report via REST (mirroring AssureCheck's server) and a headless CLI for CI entry.</td><td>2 sprints</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">ScenarioForge</td><td><b>Software-defined baseband (Phase A, first slice).</b> I/Q sample generation: PRN codes, carrier, code phase, per-satellite CN0/power. The strategic bet — enables receiver-under-test drive without RF hardware.</td><td>L</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">ScenarioForge</td><td><b>Trajectory / vehicle-motion engine (Phase B).</b> Waypoints, 6-DOF, flight/rover profiles — dynamic scenarios instead of a static receiver.</td><td>M</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">AssureCheck</td><td><b>Semantic evidence evaluation (G1).</b> Replace "row exists in mapped table" with objective-specific, evidence-driven evaluation rules. The single most important correctness fix.</td><td>L</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">AssureCheck</td><td><b>Verification-method taxonomy (G2).</b> Model analysis/test/inspection/demonstration per objective.</td><td>M</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout good"><b>Definition of done:</b> A scenario runs through a real execution path and produces live measurements. TestForge is reachable via REST/CLI. ScenarioForge emits baseband samples a software receiver can track. AssureCheck evaluates objectives semantically, not by row-existence.</div>
+</div>
+
+<!-- ===================== SPRINT 3 ===================== -->
+<h2 id="s3">4. Sprint 3 — Make it trustworthy</h2>
+<div class="card sprint s3">
+  <div class="head"><span class="num">Sprint 3</span><h3>Make it trustworthy</h3></div>
+  <p class="goal"><b>Goal:</b> Make the platform auditor-acceptable — real coverage, certification evidence packages, and governance workflow.</p>
+
+  <table>
+    <thead><tr><th style="width:8%">Pri</th><th style="width:20%">Module</th><th>Work item</th><th style="width:12%">Effort</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">AssureCheck</td><td><b>Coverage analysis (G3).</b> Compute statement/decision/MC-DC coverage, or integrate LDRA/Rapita/VectorCAST results via their APIs (strategic fit — do not re-implement MC/DC from scratch).</td><td>XL</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">AssureCheck</td><td><b>Certification evidence package (G4).</b> Objective→evidence traceability + exportable package. Reuse TraceLink's existing DO-178C evidence package.</td><td>M</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">AssureCheck</td><td><b>Review/approval/sign-off workflow (G5).</b> Status lifecycle + named approvers + real timestamps (fixes the hard-coded <code>"now"</code> placeholder).</td><td>L</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">TestForge</td><td><b>Certification-ready reporting + traceability (G4).</b> DO-178C-style evidence packages with result→requirement traceability, plus PDF/Word/ReQIF export (reuse AssureCheck's ReportService pattern).</td><td>2 sprints</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">TestForge</td><td><b>Structural code coverage (G3).</b> Statement/decision first, MC/DC next — the core of DO-178C verification.</td><td>3–4 sprints</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">TestForge</td><td><b>Workflow: lifecycle, review, baselines, RBAC, audit (G5).</b> Test-case lifecycle states, review/approval, baselines, change-impact, audit trail.</td><td>3–4 sprints</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">ScenarioForge</td><td><b>Multipath + interference/jamming models (Phase B).</b> The RF impairments test engineers care most about.</td><td>M</td></tr>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">ScenarioForge</td><td><b>Multi-GNSS native ephemeris (Phase B).</b> Galileo F/NAV, GLONASS, BeiDou + almanac + health/availability.</td><td>M</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">AssureCheck</td><td><b>Complete standard coverage (G6).</b> Full DO-254, ARP4754A, ARP4761, DO-278A objective sets + DO-178C tool qualification (§12).</td><td>L</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">AssureCheck</td><td><b>Audit trail (G7) + waivers/deviations (G9).</b> Append-only log with real actors; waiver tracking.</td><td>M</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout good"><b>Definition of done:</b> AssureCheck produces an auditor-ready evidence package with objective→evidence traceability and sign-off. TestForge reports are certification-grade with traceability and export. Structural coverage is computed. ScenarioForge models multipath/interference and multi-GNSS.</div>
+</div>
+
+<!-- ===================== SPRINT 4 ===================== -->
+<h2 id="s4">5. Sprint 4 — Make it collaborative &amp; sellable</h2>
+<div class="card sprint s4">
+  <div class="head"><span class="num">Sprint 4</span><h3>Make it collaborative &amp; sellable</h3></div>
+  <p class="goal"><b>Goal:</b> Add the multi-user, web, and commercial layers that every competitor has — the table stakes for selling.</p>
+
+  <table>
+    <thead><tr><th style="width:8%">Pri</th><th style="width:20%">Module</th><th>Work item</th><th style="width:12%">Effort</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p0">P0</span></td><td class="mod">Platform</td><td><b>User model + roles + permissions.</b> Surface the existing RBAC service as real accounts with login and role-based views. Add concurrent editing with conflict handling.</td><td>8–12 wks</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">Platform</td><td><b>Web / browser layer over the REST API.</b> The fastest path to collaboration — a read/review layer first, then full editing.</td><td>8–12 wks</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">Platform</td><td><b>Full CI/CD.</b> Automated test agents, Windows/Linux matrix, coverage reporting. The Jenkinsfile is currently a skeleton.</td><td>2–4 wks</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">Platform</td><td><b>Commercial packaging.</b> Licensing, installers, end-user docs, support model. Nothing commercial exists today.</td><td>4–6 wks</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">TestForge</td><td><b>Dedicated TestForge UI (G6).</b> Test plan editor, run dashboard, results browser with coverage-gap highlighting — matching the TraceLink Qt views.</td><td>3–4 sprints</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">TestForge</td><td><b>Parallel &amp; scheduled execution (G7) + statistical analysis (G9).</b> Multi-sample stats, trend/regression, anomaly detection (CEP/95, repeatability).</td><td>2 sprints</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">ScenarioForge</td><td><b>Scripting / automation API (Phase C).</b> Python + REST/SCPI-style remote control for CI and automation.</td><td>M</td></tr>
+      <tr><td><span class="pill p1">P1</span></td><td class="mod">ScenarioForge</td><td><b>Scenario editor + 2D/3D visualization (Phase D).</b> Qt editor, trajectory builder, visualization.</td><td>M</td></tr>
+      <tr><td><span class="pill p2">P2</span></td><td class="mod">Platform</td><td><b>OSLC integration + ReqIF external evidence.</b> Interop with DOORS/Polarion/Codebeamer; wire TraceLink's ReqIF into AssureCheck.</td><td>2–3 wks</td></tr>
+      <tr><td><span class="pill p2">P2</span></td><td class="mod">AssureCheck</td><td><b>Web UI / objective browser / gap highlighting (G12).</b> Browser-based review over the REST API.</td><td>L</td></tr>
+      <tr><td><span class="pill p2">P2</span></td><td class="mod">Platform</td><td><b>AI quality scoring on requirements.</b> Builds on existing duplicate detection; competitors ship this.</td><td>3–4 wks</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout good"><b>Definition of done:</b> Users log in with roles and permissions. A browser layer serves the platform. CI/CD runs a full matrix with coverage. Installers, licensing, and end-user docs exist. TestForge and ScenarioForge have usable UIs.</div>
+</div>
+
+<!-- ===================== DEPENDENCIES ===================== -->
+<h2 id="deps">6. Dependency map &amp; definition of done</h2>
+
+<div class="card">
+  <h3>Dependency map</h3>
+  <ul>
+    <li><b>S1 → S2:</b> The desktop app (S1) is the shell that hosts the execution loop (S2). Adapters must be functional (S1) before TestRunner can drive them (S2).</li>
+    <li><b>S2 → S3:</b> Coverage and evidence (S3) require a real execution path (S2) to produce real results. Semantic evaluation (S2) must precede certification claims (S3).</li>
+    <li><b>S3 → S4:</b> Multi-user and web (S4) build on a trustworthy core (S3). You cannot sell collaboration on a product whose compliance claims are unproven.</li>
+    <li><b>Cross-module:</b> TestForge execution (S2) feeds AssureCheck evidence (S3). ScenarioForge baseband (S2) feeds TestForge execution (S2). TraceLink's ReqIF/evidence package is reused by AssureCheck (S3/S4).</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Definition of done — whole plan</h3>
+  <p>At the end of the four sprints, Lodestar should be a product where:</p>
+  <ol>
+    <li>A user can <b>run</b> the desktop app and see real data (S1).</li>
+    <li>A scenario can <b>execute</b> through a real path and produce live measurements (S2).</li>
+    <li>The platform can <b>prove</b> compliance with real coverage and auditor-ready evidence (S3).</li>
+    <li>Teams can <b>collaborate</b> in a browser with roles, and the product can be <b>sold</b> with packaging and docs (S4).</li>
+  </ol>
+  <div class="callout warn"><b>Strategic note.</b> The reports agree on positioning: Lodestar should be the <b>orchestration/integration layer</b> wrapping vendor tools (adapters), with novel value in <b>ScenarioForge</b> (software-defined baseband) and <b>RiskAI</b> (LLM-assisted FMEA). The execution gap is that the integration layer and the novel-value modules are exactly the parts that are stubbed. Sprint 1 is essentially "execute the strategy that is already written down."</div>
+</div>
+
+<div class="foot">
+  <p><b>Source reports:</b> platform-pm-report.html · scenarioforge-pm-report.html · testforge-pm-report.html · assurecheck-pm-report.html (all in <code>docs/reports/</code>).</p>
+  <p>Generated from the four Product Manager gap analyses · Lodestar · 4-Sprint Plan.</p>
+</div>
+
+</div>
+</body>
+</html>

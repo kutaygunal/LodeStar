@@ -28,3 +28,13 @@
 - N: 100, M: 1
 - min_us: 224289, avg_us: 224289, max_us: 224289
 
+## S1 Phase 5 Benchmark — 2026-08-12 14:31:16
+- operation: graph_query
+- N: 100, M: 100
+- min_us: 681, avg_us: 755, max_us: 1127
+
+## S1 Phase 5 Benchmark — 2026-08-12 14:31:16
+- operation: insert_throughput
+- N: 100, M: 1
+- min_us: 203240, avg_us: 203240, max_us: 203240
+

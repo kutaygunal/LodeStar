@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AssureCheck — Product Manager Gap Analysis vs. Commercial Compliance/ALM Tools</title>
+<style>
+  :root {
+    --ink:#1a2332; --muted:#5b6b7f; --line:#dbe3ec; --bg:#f5f7fa;
+    --card:#ffffff; --accent:#0b5fa5; --accent-soft:#e8f1fa;
+    --good:#1a7f37; --good-soft:#e6f4ea; --warn:#b45309; --warn-soft:#fef3e2;
+    --bad:#b3261e; --bad-soft:#fdecea; --p0:#b3261e; --p1:#b45309; --p2:#0b5fa5;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:var(--ink); background:var(--bg); line-height:1.55; }
+  .wrap { max-width:1180px; margin:0 auto; padding:28px 20px 80px; }
+  header.hero { background:linear-gradient(135deg,#0b3d66,#0b5fa5 60%,#0f7bb5); color:#fff; border-radius:14px; padding:34px 36px; margin-bottom:26px; }
+  header.hero h1 { margin:0 0 6px; font-size:28px; letter-spacing:.2px; }
+  header.hero p.sub { margin:0; opacity:.92; font-size:15px; }
+  .meta { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  .meta span { background:rgba(255,255,255,.16); border:1px solid rgba(255,255,255,.25); padding:5px 12px; border-radius:20px; font-size:12.5px; }
+  h2 { font-size:22px; margin:38px 0 12px; padding-bottom:8px; border-bottom:2px solid var(--line); }
+  h3 { font-size:17px; margin:22px 0 8px; }
+  p { margin:8px 0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:20px 22px; margin:14px 0; box-shadow:0 1px 3px rgba(20,40,70,.05); }
+  .verdict { display:flex; gap:18px; align-items:center; flex-wrap:wrap; }
+  .verdict .score { font-size:44px; font-weight:700; color:var(--accent); min-width:120px; text-align:center; }
+  .verdict .score small { display:block; font-size:13px; font-weight:600; color:var(--muted); }
+  .pill { display:inline-block; padding:2px 10px; border-radius:12px; font-size:12px; font-weight:600; }
+  .pill.good { background:var(--good-soft); color:var(--good); }
+  .pill.warn { background:var(--warn-soft); color:var(--warn); }
+  .pill.bad { background:var(--bad-soft); color:var(--bad); }
+  .pill.p0 { background:var(--bad-soft); color:var(--p0); }
+  .pill.p1 { background:var(--warn-soft); color:var(--p1); }
+  .pill.p2 { background:var(--accent-soft); color:var(--p2); }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:13.5px; background:#fff; }
+  th,td { border:1px solid var(--line); padding:8px 10px; text-align:left; vertical-align:top; }
+  th { background:var(--accent-soft); color:var(--accent); font-weight:600; }
+  tr:nth-child(even) td { background:#fafcfe; }
+  .have { color:var(--good); font-weight:600; }
+  .commercial { color:var(--accent); font-weight:600; }
+  .gap { color:var(--bad); font-weight:600; }
+  .legend { font-size:12.5px; color:var(--muted); margin:6px 0 2px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:820px){ .grid2{grid-template-columns:1fr;} }
+  ul.tight { margin:6px 0; padding-left:20px; }
+  ul.tight li { margin:4px 0; }
+  .note { background:var(--accent-soft); border-left:4px solid var(--accent); padding:10px 14px; border-radius:6px; font-size:13.5px; margin:10px 0; }
+  .warnbox { background:var(--warn-soft); border-left:4px solid var(--warn); padding:10px 14px; border-radius:6px; font-size:13.5px; margin:10px 0; }
+  .badbox { background:var(--bad-soft); border-left:4px solid var(--bad); padding:10px 14px; border-radius:6px; font-size:13.5px; margin:10px 0; }
+  .goodbox { background:var(--good-soft); border-left:4px solid var(--good); padding:10px 14px; border-radius:6px; font-size:13.5px; margin:10px 0; }
+  code { background:#eef2f6; border:1px solid var(--line); border-radius:4px; padding:1px 5px; font-size:12.5px; font-family:Consolas,Menlo,monospace; }
+  .effort { font-size:12px; color:var(--muted); }
+  footer { margin-top:40px; color:var(--muted); font-size:12.5px; text-align:center; }
+  .toc a { color:var(--accent); text-decoration:none; }
+  .toc a:hover { text-decoration:underline; }
+  .toc { columns:2; column-gap:30px; }
+  .toc li { margin:3px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>AssureCheck — Product Manager Gap Analysis</h1>
+  <p class="sub">Commercial-grade assessment of the Lodestar compliance engine vs. LDRA, Rapita RapiTest, VectorCAST, QA Systems, Visure, Codebeamer, Polarion, Jama, and IBM DOORS.</p>
+  <div class="meta">
+    <span>Module: AssureCheck (WP-1..WP-6)</span>
+    <span>Standards: ARP4754A · ARP4761 · DO-178C · DO-254 · DO-278A</span>
+    <span>Basis: verified source (core/assurecheck/*, core/api/AssureCheckApiServer.*)</span>
+    <span>Date: 2026-08-12</span>
+  </div>
+</header>
+
+<nav class="card toc">
+  <h3 style="margin-top:0">Contents</h3>
+  <ol>
+    <li><a href="#exec">Executive Summary &amp; Verdict</a></li>
+    <li><a href="#compare">Capability vs. Commercial Tools — Comparison Table</a></li>
+    <li><a href="#deep">Deep-Dive per Area (1–9)</a></li>
+    <li><a href="#priorities">Prioritized Gap List (P0/P1/P2) with Effort</a></li>
+    <li><a href="#roadmap">Recommended Roadmap</a></li>
+  </ol>
+</nav>
+
+<!-- ===================== 1. EXECUTIVE SUMMARY ===================== -->
+<h2 id="exec">1. Executive Summary &amp; Verdict</h2>
+
+<div class="card verdict">
+  <div class="score">6.2<small>/10</small></div>
+  <div>
+    <p><strong>Verdict:</strong> AssureCheck is a <strong>solid, well-engineered compliance <em>data &amp; reporting engine</em></strong> — but it is <strong>not yet a certification-grade compliance tool</strong>. It has a clean standards registry, a working PASS/FAIL/NA/WARNING engine, evidence collection from TraceLink/TestForge, HTML/CSV/JSON reports, a REST API, and a dashboard. What it lacks is the <strong>semantic depth, workflow, and auditability</strong> that a certification authority or a paying customer expects.</p>
+    <p>The single most important finding is a <strong>correctness gap in the compliance engine</strong>: objectives are marked PASS when <em>any</em> entity of a heuristically-mapped type exists in the database — not when the objective is actually satisfied. This is the difference between a "checklist tracker" and a "compliance tool."</p>
+  </div>
+</div>
+
+<h3>Top gaps (headline)</h3>
+<div class="card">
+  <ul class="tight">
+    <li><span class="pill p0">P0</span> <strong>Shallow evidence evaluation</strong> — the engine infers objective status from "does a row exist in a mapped table," not from whether the objective is genuinely met. A compliance authority would reject this as evidence.</li>
+    <li><span class="pill p0">P0</span> <strong>No verification-method / coverage analysis</strong> — no MC/DC, statement, or decision coverage computation, no analysis/test/inspection/demonstration distinction, no coupling analysis. This is the core value of LDRA/Rapita/VectorCAST.</li>
+    <li><span class="pill p0">P0</span> <strong>No certification evidence package</strong> — reports are flat tables; there is no auditor-ready evidence package with objective→evidence traceability, sign-off, or approval.</li>
+    <li><span class="pill p1">P1</span> <strong>No review/approval/waiver workflow</strong> — no objective status lifecycle, no sign-off, no deviations/waivers, no audit trail of who approved what.</li>
+    <li><span class="pill p1">P1</span> <strong>No multi-user / RBAC / audit</strong> — single-user, no roles, no permissions, no per-actor audit trail.</li>
+    <li><span class="pill p1">P1</span> <strong>Incomplete standard coverage</strong> — DO-178C Tables A-1..A-7 are fully represented (82 objectives), but DO-254, ARP4754A, ARP4761, and DO-278A are simplified subsets; tool qualification (DO-178C §12) is absent.</li>
+    <li><span class="pill p2">P2</span> <strong>No web UI / objective browser / gap highlighting</strong> — REST API + Qt dashboard data exist, but no interactive browser experience.</li>
+    <li><span class="pill p2">P2</span> <strong>No external evidence import (ReqIF/OSLC)</strong> — only internal TraceLink/TestForge evidence.</li>
+  </ul>
+</div>
+
+<div class="note"><strong>Bottom line:</strong> The <em>engine and data layer</em> are at roughly 60–70% of commercial parity. The <em>verification-analysis, workflow, and certification-evidence</em> layers — where LDRA, Rapita, VectorCAST, Visure, and Polarion differentiate — are largely missing. AssureCheck is a credible <strong>foundation</strong> and a strong <strong>orchestration/integration layer</strong>, but it must add semantic evaluation, coverage analysis, and an approval/audit workflow before it can be sold as a certification tool.</div>
+
+<!-- ===================== 2. COMPARISON TABLE ===================== -->
+<h2 id="compare">2. Capability vs. Commercial Tools — Comparison Table</h2>
+<p class="legend">Legend: ✅ = has it · 🟡 = partial / heuristic · ❌ = missing. "Benchmark" = what leading commercial tools (LDRA, Rapita, VectorCAST, QA Systems, Visure, Codebeamer, Polarion, Jama, DOORS) ship today.</p>
+<div class="card" style="overflow-x:auto">
+<table>
+  <thead>
+    <tr><th>Capability</th><th>AssureCheck (verified)</th><th>Commercial benchmark</th><th>Gap</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Standards registry</strong></td><td class="have">✅ 5 standards, 136 objectives seeded</td><td class="commercial">Full standard text + all objectives + guidance</td><td class="gap">DO-254/ARP4754A/ARP4761/DO-278A are subsets</td><td><span class="pill p1">P1</span></td></tr>
+    <tr><td><strong>DO-178C Tables A-1..A-7</strong></td><td class="have">✅ 82 objectives, full tables</td><td class="commercial">Full tables + tool qualification (§12)</td><td class="gap">Tool qualification absent</td><td><span class="pill p1">P1</span></td></tr>
+    <tr><td><strong>DAL handling</strong></td><td class="have">✅ A–E, per-item applicability</td><td class="commercial">DAL assignment workflow + change impact</td><td class="gap">No assignment workflow / impact</td><td><span class="pill p2">P2</span></td></tr>
+    <tr><td><strong>Compliance evaluation</strong></td><td class="have">🟡 PASS/FAIL/NA/WARNING, but heuristic (row-exists)</td><td class="commercial">Semantic, evidence-driven evaluation</td><td class="gap">Correctness of PASS determination</td><td><span class="pill p0">P0</span></td></tr>
+    <tr><td><strong>Verification methods</strong></td><td class="have">❌ none (no analysis/test/inspection/demo)</td><td class="commercial">Analysis, test, inspection, demonstration</td><td class="gap">No method taxonomy</td><td><span class="pill p0">P0</span></td></tr>
+    <tr><td><strong>Coverage analysis (MC/DC, statement, decision)</strong></td><td class="have">❌ none</td><td class="commercial">LDRA/Rapita/VectorCAST compute real coverage</td><td class="gap">Core differentiator missing</td><td><span class="pill p0">P0</span></td></tr>
+    <tr><td><strong>Coupling analysis</strong></td><td class="have">❌ none</td><td class="commercial">Data/control coupling analysis</td><td class="gap">Missing</td><td><span class="pill p1">P1</span></td></tr>
+    <tr><td><strong>Evidence collection</strong></td><td class="have">✅ TraceLink + TestForge snapshot</td><td class="commercial">Multi-source, importable, versioned</td><td class="gap">Internal-only; no external import</td><td><span class="pill p2">P2</span></td></tr>
+    <tr><td><strong>Certification evidence package</strong></td><td class="have">❌ flat HTML/CSV/JSON only</td><td class="commercial">Auditor-ready package + traceability + sign-off</td><td class="gap">No evidence package</td><td><span class="pill p0">P0</span></td></tr>
+    <tr><td><strong>Reporting</strong></td><td class="have">✅ HTML/CSV/JSON + coverage %</td><td class="commercial">Per-standard/per-DAL, branded, versioned</td><td class="gap">Basic; no versioning/audit</td><td><span class="pill p1">P1</span></td></tr>
+    <tr><td><strong>Workflow / review / approval</strong></td><td class="have">❌ none</td><td class="commercial">Status lifecycle, review, approval, sign-off</td><td class="gap">Missing</td><td><span class="pill p0">P0</span></td></tr>
+    <tr><td><strong>Waivers / deviations</strong></td><td class="have">❌ none</td><td class="commercial">Waiver/deviation tracking</td><td class="gap">Missing</td><td><span class="pill p1">P1</span></td></tr>
+    <tr><td><strong>Audit trail</strong></td><td class="have">❌ none in AssureCheck</td><td class="commercial">Full append-only audit + actor</td><td class="gap">Missing</td><td><span class="pill p1">P1</span></td></tr>
+    <tr><td><strong>Multi-user / RBAC</strong></td><td class="have">❌ single-user</td><td class="commercial">Roles, permissions, concurrent editing</td><td class="gap">Missing</td><td><span class="pill p1">P1</span></td></tr>
+    <tr><td><strong>REST API</strong></td><td class="have">✅ /assurecheck/* routes</td><td class="commercial">Full API + OSLC</td><td class="gap">No OSLC; limited surface</td><td><span class="pill p2">P2</span></td></tr>
+    <tr><td><strong>Dashboard</strong></td><td class="have">✅ per-standard coverage data</td><td class="commercial">Interactive dashboards + gap highlighting</td><td class="gap">Data only; no UI</td><td><span class="pill p2">P2</span></td></tr>
+    <tr><td><strong>Web / browser UI</strong></td><td class="have">❌ none</td><td class="commercial">All leading tools are browser-based</td><td class="gap">Missing</td><td><span class="pill p2">P2</span></td></tr>
+    <tr><td><strong>Performance</strong></td><td class="have">✅ batched/incremental, 10k-scale</td><td class="commercial">Scalable, but not a differentiator</td><td class="gap">None — a strength</td><td><span class="pill good">—</span></td></tr>
+    <tr><td><strong>ReqIF / external interchange</strong></td><td class="have">❌ none in AssureCheck</td><td class="commercial">ReqIF import/export (TraceLink has it)</td><td class="gap">Not wired into AssureCheck</td><td><span class="pill p2">P2</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ===================== 3. DEEP DIVE ===================== -->
+<h2 id="deep">3. Deep-Dive per Area (1–9)</h2>
+
+<!-- Area 1 -->
+<h3>3.1 Compliance Coverage</h3>
+<div class="card">
+  <p><strong>Have:</strong> Five standards seeded with 136 checklist items. DO-178C is represented by all seven tables (A-1..A-7) totalling 82 objectives — this matches the real standard's table structure. Each item carries an id, objective text, DAL range, and evidence hint.</p>
+  <p><strong>Commercial:</strong> Vendors ship the <em>full</em> standard text, every objective, and the associated guidance/means-of-compliance. DO-178C also includes tool qualification (§12), and DO-254 has ~70 objectives across its tables (not 16). ARP4754A and ARP4761 have far more objectives than the 16 and 11 listed here.</p>
+  <p><strong>Gap:</strong> DO-178C is well covered, but the other four standards are <strong>simplified subsets</strong>. Tool qualification (DO-178C §12.2 / Table 11-1) is absent entirely. There is no linkage to the actual standard text or to the "means of compliance" guidance that auditors expect.</p>
+  <div class="warnbox"><strong>Risk:</strong> A customer certifying hardware (DO-254) or a system (ARP4754A/ARP4761) would find the objective set incomplete and would not trust the coverage % as a certification claim.</div>
+</div>
+
+<!-- Area 2 -->
+<h3>3.2 Certification Evidence</h3>
+<div class="card">
+  <p><strong>Have:</strong> Evidence links are attached to PASS results (entity type + id), collected from TraceLink (requirements/design/test/trace) and TestForge (test runs). Reports export as HTML/CSV/JSON with objective-coverage percentages.</p>
+  <p><strong>Commercial:</strong> Tools produce an <strong>auditor-ready evidence package</strong>: each objective is traceable to concrete evidence artifacts, with sign-off, approval, and a formal package export (e.g., a DO-178C compliance matrix). Evidence is versioned and immutable.</p>
+  <p><strong>Gap:</strong> AssureCheck produces <strong>flat tables</strong>, not a certification evidence package. There is <strong>no sign-off/approval workflow</strong>, no evidence versioning, and no formal objective→evidence traceability document. The evidence links are only populated on PASS and are not independently verifiable.</p>
+  <div class="badbox"><strong>Critical:</strong> The evidence is <em>heuristic</em> — a PASS means "some row of the mapped type exists," not "this objective is demonstrably satisfied." This would not survive a certification audit.</div>
+</div>
+
+<!-- Area 3 -->
+<h3>3.3 Verification Methods</h3>
+<div class="card">
+  <p><strong>Have:</strong> The engine distinguishes only four evidence sources (test_cases, trace_links, design_items, requirements) via substring matching on the evidence hint. It does not model verification methods at all.</p>
+  <p><strong>Commercial:</strong> LDRA, Rapita RapiTest, VectorCAST, and QA Systems support the four DO-178C verification methods (analysis, test, inspection, demonstration) and compute <strong>real structural coverage</strong> — statement, decision, and MC/DC — plus data/control coupling analysis. This is the core of their value proposition.</p>
+  <p><strong>Gap:</strong> AssureCheck has <strong>no verification-method taxonomy</strong> and <strong>no coverage computation</strong>. It cannot tell you whether MC/DC was achieved for a DAL-A objective — it only checks whether any test case exists with a "Passed" status. Coupling analysis is absent.</p>
+  <div class="badbox"><strong>Critical:</strong> For DO-178C objectives A6-8 (statement), A6-9 (decision), A6-10 (MC/DC), and A6-11 (coupling), AssureCheck cannot actually verify compliance. This is the single biggest functional gap vs. the verification-tool competitors.</div>
+</div>
+
+<!-- Area 4 -->
+<h3>3.4 DAL Handling</h3>
+<div class="card">
+  <p><strong>Have:</strong> DAL A–E is supported. Each checklist item carries a DAL range (A, A-B, A-C, A-D), and the engine marks items NA when the project DAL falls outside the range. The API accepts a <code>dal</code> parameter.</p>
+  <p><strong>Commercial:</strong> Tools provide a <strong>DAL assignment workflow</strong> (assign DAL per item/component), show DAL-change impact, and generate per-DAL reports. DAL is a first-class, managed attribute.</p>
+  <p><strong>Gap:</strong> DAL is a <strong>query parameter</strong>, not a managed attribute. There is no DAL assignment workflow, no DAL-change impact analysis, and no per-DAL report packaging beyond passing a string. The DAL applicability logic itself is correct (range check), but it is not surfaced as a workflow.</p>
+</div>
+
+<!-- Area 5 -->
+<h3>3.5 Workflow &amp; Review</h3>
+<div class="card">
+  <p><strong>Have:</strong> A status enum (PASS/FAIL/NA/WARNING) per objective, persisted in <code>assurance_checks</code>. Results are idempotently replaced per standard.</p>
+  <p><strong>Commercial:</strong> A full objective <strong>status lifecycle</strong> (e.g., Draft → In Review → Approved → Signed Off), review/approval with named approvers, waivers/deviations, and comments. Every status change is audited.</p>
+  <p><strong>Gap:</strong> AssureCheck has <strong>no workflow</strong>. Status is computed, not managed. There is no review, no approval, no sign-off, no waiver/deviation, no comments, and no audit trail of who changed what. The <code>checked_at</code> column is hard-coded to the string <code>"now"</code> — there is no real timestamp or actor.</p>
+  <div class="warnbox"><strong>Note:</strong> The <code>checked_at</code> value is literally the string <code>"now"</code> in <code>ComplianceEngine::storeResults</code>. This is a placeholder, not a real timestamp — a concrete sign the workflow/audit layer is unfinished.</div>
+</div>
+
+<!-- Area 6 -->
+<h3>3.6 Reporting</h3>
+<div class="card">
+  <p><strong>Have:</strong> <code>ReportService</code> builds a per-standard/per-DAL report with coverage summary and exports to HTML, CSV, and JSON. Coverage % is computed as pass/applicable.</p>
+  <p><strong>Commercial:</strong> Branded, versioned certification reports; per-standard and per-DAL packaging; audit trail of report generation; export to multiple formats including PDF and ReqIF; compliance matrices.</p>
+  <p><strong>Gap:</strong> The HTML report is a <strong>minimal table</strong> (no styling, no cover page, no branding, no per-DAL packaging). There is no report versioning, no generation audit, no PDF, and no compliance-matrix export. CSV output does not escape commas/quotes in objective text (a correctness bug for real data).</p>
+  <div class="note"><strong>Detail:</strong> <code>toCsv</code> concatenates fields with commas without quoting or escaping. Any objective text containing a comma or quote will corrupt the CSV — a real defect for a reporting feature.</div>
+</div>
+
+<!-- Area 7 -->
+<h3>3.7 Integration</h3>
+<div class="card">
+  <p><strong>Have:</strong> <code>EvidenceService</code> collects from TraceLink (entities + links) and TestForge (test runs) into an <code>EvidenceSnapshot</code>. A REST API (<code>/assurecheck/*</code>) exposes standards, checks, summary, and dashboard.</p>
+  <p><strong>Commercial:</strong> Deep integration with requirements/test tools, <strong>import of external evidence</strong> (ReqIF, OSLC, test results from other tools), and a broad API surface.</p>
+  <p><strong>Gap:</strong> Evidence is <strong>internal-only</strong> (TraceLink/TestForge). There is no ReqIF import of external evidence, no OSLC, and no way to attach evidence from third-party tools. The REST API is functional but narrow (5 routes).</p>
+  <div class="note"><strong>Strength:</strong> The TraceLink module already has ReqIF import/export and a DO-178C evidence package. Wiring that into AssureCheck would close this gap cheaply.</div>
+</div>
+
+<!-- Area 8 -->
+<h3>3.8 UX</h3>
+<div class="card">
+  <p><strong>Have:</strong> <code>DashboardService</code> provides per-standard objective coverage data, and the Qt compliance dashboard consumes it. A REST API serves the data.</p>
+  <p><strong>Commercial:</strong> Interactive browser-based dashboards with <strong>objective browsers, gap highlighting (red/green), filters, and drill-down</strong>. All leading tools are web-first and collaborative.</p>
+  <p><strong>Gap:</strong> AssureCheck has <strong>data, not UI</strong>. There is no objective browser, no gap highlighting, no interactive matrix, and no web layer. The Qt app is not built. A stakeholder cannot visually review compliance today.</p>
+</div>
+
+<!-- Area 9 -->
+<h3>3.9 Commercial Readiness</h3>
+<div class="card">
+  <p><strong>Have:</strong> A clean, testable engine; REST API; performance hardening (batched/incremental, 10k-scale); idempotent result storage; a documented standards checklist.</p>
+  <p><strong>Commercial:</strong> A certification authority or paying customer expects: <strong>auditable evidence, sign-off workflow, multi-user RBAC, tool qualification, real coverage analysis, and a web UI</strong>.</p>
+  <p><strong>Gap:</strong> AssureCheck is <strong>not yet sellable as a certification tool</strong>. It is a strong <strong>foundation and integration layer</strong>. The missing pieces are exactly the ones that make a compliance tool trustworthy: semantic evaluation, coverage analysis, workflow/approval, audit, and multi-user support.</p>
+  <div class="goodbox"><strong>What to defend:</strong> The engine is clean, well-tested (6 suites green), performant, and REST-exposed. As an <em>orchestration/integration layer</em> that wraps LDRA/Rapita/VectorCAST via their APIs, it has genuine commercial value — matching the project's strategic positioning.</div>
+</div>
+
+<!-- ===================== 4. PRIORITIZED GAPS ===================== -->
+<h2 id="priorities">4. Prioritized Gap List (P0/P1/P2) with Effort</h2>
+<p class="legend">Effort: S = small (≤2 days) · M = medium (≤1 week) · L = large (1–3 weeks) · XL = large (3+ weeks).</p>
+
+<div class="card">
+<h3>P0 — Must fix before any certification claim (correctness &amp; core value)</h3>
+<table>
+  <thead><tr><th>#</th><th>Gap</th><th>Why it matters</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>G1</td><td><strong>Semantic evidence evaluation</strong> — replace "row exists in mapped table" with objective-specific, evidence-driven evaluation rules.</td><td>Current PASS is not trustworthy; a certification authority would reject it.</td><td class="effort">L</td></tr>
+    <tr><td>G2</td><td><strong>Verification-method taxonomy</strong> — model analysis/test/inspection/demonstration per objective.</td><td>Required to map objectives to the correct means of compliance.</td><td class="effort">M</td></tr>
+    <tr><td>G3</td><td><strong>Coverage analysis</strong> — compute statement/decision/MC-DC coverage (or integrate LDRA/Rapita/VectorCAST results).</td><td>Core differentiator; DO-178C A6-8..A6-11 cannot be verified without it.</td><td class="effort">XL</td></tr>
+    <tr><td>G4</td><td><strong>Certification evidence package</strong> — objective→evidence traceability + exportable package.</td><td>Auditor-ready deliverable; reuse TraceLink's existing evidence package.</td><td class="effort">M</td></tr>
+    <tr><td>G5</td><td><strong>Review/approval/sign-off workflow</strong> — status lifecycle + named approvers.</td><td>Required for any credible compliance claim.</td><td class="effort">L</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="card">
+<h3>P1 — High-value commercial parity</h3>
+<table>
+  <thead><tr><th>#</th><th>Gap</th><th>Why it matters</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>G6</td><td><strong>Complete standard coverage</strong> — full DO-254, ARP4754A, ARP4761, DO-278A objective sets + DO-178C tool qualification (§12).</td><td>Customers certifying hardware/systems need complete objective sets.</td><td class="effort">L</td></tr>
+    <tr><td>G7</td><td><strong>Audit trail</strong> — append-only log of who changed what, with real timestamps and actors.</td><td>Replace the hard-coded <code>"now"</code> placeholder; required for compliance.</td><td class="effort">M</td></tr>
+    <tr><td>G8</td><td><strong>Multi-user / RBAC</strong> — roles, permissions, named approvers.</td><td>Every commercial tool has it; needed for collaborative review.</td><td class="effort">L</td></tr>
+    <tr><td>G9</td><td><strong>Waivers / deviations</strong> — track and report objective waivers.</td><td>Standard compliance feature.</td><td class="effort">M</td></tr>
+    <tr><td>G10</td><td><strong>Coupling analysis</strong> — data/control coupling (or integrate a tool).</td><td>DO-178C A6-11 objective.</td><td class="effort">L</td></tr>
+    <tr><td>G11</td><td><strong>Report hardening</strong> — CSV escaping, report versioning, per-DAL packaging, branded HTML.</td><td>Fixes a real CSV bug; makes reports auditor-presentable.</td><td class="effort">M</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="card">
+<h3>P2 — Differentiators &amp; UX</h3>
+<table>
+  <thead><tr><th>#</th><th>Gap</th><th>Why it matters</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>G12</td><td><strong>Web UI / objective browser / gap highlighting</strong> — browser-based review over the REST API.</td><td>All competitors are web-first; enables stakeholder review.</td><td class="effort">L</td></tr>
+    <tr><td>G13</td><td><strong>External evidence import</strong> — ReqIF/OSLC + third-party test results.</td><td>Wire TraceLink's ReqIF into AssureCheck; broadens evidence sources.</td><td class="effort">M</td></tr>
+    <tr><td>G14</td><td><strong>DAL assignment workflow</strong> — managed DAL attribute + change impact.</td><td>Makes DAL a first-class managed attribute.</td><td class="effort">M</td></tr>
+    <tr><td>G15</td><td><strong>OSLC integration</strong> — expose/consume OSLC.</td><td>Enterprise interoperability.</td><td class="effort">L</td></tr>
+  </tbody>
+</table>
+</div>
+
+<!-- ===================== 5. ROADMAP ===================== -->
+<h2 id="roadmap">5. Recommended Roadmap</h2>
+
+<div class="card">
+<h3>Phase A — Make it trustworthy (P0, ~4–6 weeks)</h3>
+<ul class="tight">
+  <li><strong>G1</strong> Semantic evidence evaluation: define per-objective evaluation rules (not row-existence). This is the foundation — everything else builds on it.</li>
+  <li><strong>G2</strong> Verification-method taxonomy: tag each objective with its means of compliance (analysis/test/inspection/demonstration).</li>
+  <li><strong>G5</strong> Review/approval/sign-off workflow with real timestamps and actors (also fixes the <code>"now"</code> placeholder).</li>
+  <li><strong>G4</strong> Certification evidence package: objective→evidence traceability + exportable package (reuse TraceLink's existing DO-178C evidence package).</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>Phase B — Verification depth (P0/P1, ~4–6 weeks)</h3>
+<ul class="tight">
+  <li><strong>G3</strong> Coverage analysis: integrate LDRA/Rapita/VectorCAST results via their APIs (strategic fit — do not re-implement MC/DC from scratch), or compute basic statement/decision coverage internally.</li>
+  <li><strong>G10</strong> Coupling analysis (integrate or implement).</li>
+  <li><strong>G6</strong> Complete the DO-254/ARP4754A/ARP4761/DO-278A objective sets + DO-178C tool qualification.</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>Phase C — Commercial parity (P1, ~4–6 weeks)</h3>
+<ul class="tight">
+  <li><strong>G7</strong> Append-only audit trail.</li>
+  <li><strong>G8</strong> Multi-user / RBAC with named approvers.</li>
+  <li><strong>G9</strong> Waivers/deviations.</li>
+  <li><strong>G11</strong> Report hardening (CSV escaping, versioning, per-DAL packaging, branded HTML).</li>
+</ul>
+</div>
+
+<div class="card">
+<h3>Phase D — UX &amp; differentiation (P2, ~4–6 weeks)</h3>
+<ul class="tight">
+  <li><strong>G12</strong> Web UI / objective browser / gap highlighting over the REST API.</li>
+  <li><strong>G13</strong> External evidence import (ReqIF/OSLC).</li>
+  <li><strong>G14</strong> DAL assignment workflow.</li>
+  <li><strong>G15</strong> OSLC integration.</li>
+</ul>
+</div>
+
+<div class="note"><strong>Strategic recommendation:</strong> Position AssureCheck as the <strong>orchestration/integration layer</strong> that wraps LDRA/Rapita/VectorCAST for coverage and Visure/Polarion for requirements — rather than re-implementing MC/DC analysis from scratch. The engine's clean architecture, REST API, and performance make it an ideal compliance <em>hub</em>. Prioritize G1 (semantic evaluation) and G5 (workflow) first: without them, no certification claim is credible.</div>
+
+<footer>
+  AssureCheck PM Gap Analysis · Lodestar (VeriNav) · Generated 2026-08-12 · Basis: verified source in <code>core/assurecheck/*</code> and <code>core/api/AssureCheckApiServer.*</code>
+</footer>
+
+</div>
+</body>
+</html>
