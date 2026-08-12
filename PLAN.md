@@ -13,6 +13,7 @@ assigned via a task file at `docs/<phase>-task.md` per the delegation rule.
 | 2 | Monorepo scaffold | Create folder structure with a compiling CMake build (Windows/Linux) | High | DONE | senior-engineer-2 | yes |
 | 3 | Phase 1 vertical slice | Build core/common, core/persistence (SQLite schema), core/tracelink (graph model) | High | DONE | senior-engineer-3 | yes |
 | 4 | ScenarioForge (real GNSS math) | Build core/scenario: orbit propagation (Keplerian + SGP4), RINEX parser, NMEA generator, pseudorange/Doppler, error models (clock/ionosphere/troposphere), SBAS augmentation. COMMERCIAL GRADE. Planner details into 6 items (with child items if needed); scrum-master itemizes. | High | DONE | senior-engineer-4 | yes |
+| 5 | Adapters + thin C++ REST API | Build core/adapters (IAdapter pattern: Spirent/R&S/Skydel/Llm/Python) and core/api (thin embedded C++ REST/HTTP service over core). Unblocks TestForge/AssureCheck/RiskAI + external tool + Python/LLM integration. COMMERCIAL GRADE. Planner details into items (child items if needed); scrum-master itemizes. | High | TODO | planner | - |
 
 Update the Status and Committed columns as phases complete. Commit tracker updates as
 chore(...) commits.
