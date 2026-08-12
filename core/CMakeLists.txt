@@ -32,7 +32,8 @@ lodestar_add_module(lodestar_tracelink
     tracelink/StateMachine.cpp
     tracelink/TraceLinkService.cpp
     tracelink/BaselineService.cpp
-    tracelink/RulesEngine.cpp)
+    tracelink/RulesEngine.cpp
+    tracelink/IoService.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
 # --- ScenarioForge (real GNSS math, Phase 4) ---------------------------------
@@ -94,11 +95,13 @@ endif()
 # --- Thin C++ REST API (Phase 5): embedded HTTP server + endpoints ----------
 lodestar_add_module(lodestar_api
     api/HttpServer.cpp
-    api/ApiServer.cpp)
+    api/ApiServer.cpp
+    api/TraceLinkApiServer.cpp)
 target_link_libraries(lodestar_api PUBLIC
     lodestar_common
     lodestar_adapters
-    lodestar_scenario)
+    lodestar_scenario
+    lodestar_tracelink)
 if(WIN32)
     target_link_libraries(lodestar_api PUBLIC ws2_32)
 endif()
@@ -177,5 +180,28 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_tracelink)
     target_compile_definitions(lodestar_wp4_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    add_executable(lodestar_wp5_tests
+        test/wp5_import_export_tests.cpp)
+    target_link_libraries(lodestar_wp5_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp5_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    add_executable(lodestar_wp6_tests
+        test/wp6_api_tests.cpp)
+    target_link_libraries(lodestar_wp6_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink
+        lodestar_api
+        lodestar_adapters)
+    if(WIN32)
+        target_link_libraries(lodestar_wp6_tests PRIVATE ws2_32)
+    endif()
+    target_compile_definitions(lodestar_wp6_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
