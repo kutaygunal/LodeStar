@@ -1,2 +1,0 @@
-{"ts":"2026-08-12T07:43:47","level":"INFO","event":"entity.created","fields":{"type":"requirement","external_id":"REQ-LOG"}}
-{"ts":"2026-08-12T07:43:47","level":"ERROR","event":"validation.failed","fields":{"rule":"REQ_MUST_BE_VERIFIED"}}

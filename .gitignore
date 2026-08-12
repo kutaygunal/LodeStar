@@ -45,3 +45,4 @@ venv/
 *.db
 *.db-wal
 *.db-shm
+lodestar_wpF_log.jsonl
