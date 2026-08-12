@@ -33,7 +33,8 @@ lodestar_add_module(lodestar_tracelink
     tracelink/TraceLinkService.cpp
     tracelink/BaselineService.cpp
     tracelink/RulesEngine.cpp
-    tracelink/IoService.cpp)
+    tracelink/IoService.cpp
+    tracelink/ViewModelFactory.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
 # --- ScenarioForge (real GNSS math, Phase 4) ---------------------------------
@@ -203,5 +204,23 @@ if(LODESTAR_BUILD_TESTS)
         target_link_libraries(lodestar_wp6_tests PRIVATE ws2_32)
     endif()
     target_compile_definitions(lodestar_wp6_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    add_executable(lodestar_wp7_tests
+        test/wp7_view_models_tests.cpp)
+    target_link_libraries(lodestar_wp7_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp7_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    add_executable(lodestar_wp8_tests
+        test/wp8_hardening_tests.cpp)
+    target_link_libraries(lodestar_wp8_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wp8_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()
