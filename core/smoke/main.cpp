@@ -18,6 +18,7 @@
 #include "core/tracelink/TraceGraph.h"
 
 namespace lodestar::scenario { int runScenarioSmoke(); }
+namespace lodestar { int runAdaptersApiSmoke(); }
 
 #ifndef LODESTAR_MIGRATIONS_DIR
 #define LODESTAR_MIGRATIONS_DIR "core/persistence/migrations"
@@ -130,6 +131,12 @@ int main(int argc, char** argv) {
     int scenarioResult = lodestar::scenario::runScenarioSmoke();
     if (scenarioResult != 0) {
         return fail("ScenarioForge smoke path failed");
+    }
+
+    // Phase 5: Adapters + thin C++ REST API smoke path.
+    int adaptersResult = lodestar::runAdaptersApiSmoke();
+    if (adaptersResult != 0) {
+        return fail("Adapters + API smoke path failed");
     }
 
     return 0;
