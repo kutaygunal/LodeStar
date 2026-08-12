@@ -32,6 +32,7 @@ lodestar_add_module(lodestar_tracelink
     tracelink/StateMachine.cpp
     tracelink/TraceLinkService.cpp
     tracelink/BaselineService.cpp
+    tracelink/ChangeRequestService.cpp
     tracelink/RulesEngine.cpp
     tracelink/IoService.cpp
     tracelink/ViewModelFactory.cpp)
@@ -97,6 +98,7 @@ endif()
 lodestar_add_module(lodestar_api
     api/HttpServer.cpp
     api/ApiServer.cpp
+    api/ApiKeyService.cpp
     api/TraceLinkApiServer.cpp)
 target_link_libraries(lodestar_api PUBLIC
     lodestar_common
@@ -252,5 +254,40 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_tracelink)
     target_compile_definitions(lodestar_wpF_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- WP-B: change management (restore/rollback + change-request workflow) -
+    add_executable(lodestar_wpB_tests
+        test/wpB_tests.cpp)
+    target_link_libraries(lodestar_wpB_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wpB_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- WP-D: coverage + evidence (by method + DO-178C evidence package) ---
+    add_executable(lodestar_wpD_tests
+        test/wpD_tests.cpp)
+    target_link_libraries(lodestar_wpD_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_wpD_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- WP-E: API auth/keys + duplicate detection --------------------------
+    add_executable(lodestar_wpE_tests
+        test/wpE_tests.cpp)
+    target_link_libraries(lodestar_wpE_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink
+        lodestar_api
+        lodestar_adapters)
+    if(WIN32)
+        target_link_libraries(lodestar_wpE_tests PRIVATE ws2_32)
+    endif()
+    target_compile_definitions(lodestar_wpE_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 endif()

@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <cstdio>
 #include <ctime>
+#include <filesystem>
+#include <fstream>
 #include <map>
 #include <sstream>
 #include <utility>
@@ -193,6 +195,33 @@ std::map<std::string, std::string> idToExt(TraceLinkService& svc, EntityType t) 
         }
     }
     return m;
+}
+
+// Writes `content` to `path` (binary). Returns false on failure.
+bool writeFile(const std::string& path, const std::string& content) {
+    std::ofstream out(path, std::ios::binary);
+    if (!out) return false;
+    out << content;
+    out.close();
+    return !out.fail();
+}
+
+// Runs a SELECT and returns every row as a vector of string columns.
+std::vector<std::vector<std::string>> queryRows(sqlite3* db, const std::string& sql) {
+    std::vector<std::vector<std::string>> out;
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) return out;
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        std::vector<std::string> row;
+        const int n = sqlite3_column_count(stmt);
+        for (int i = 0; i < n; ++i) {
+            const unsigned char* t = sqlite3_column_text(stmt, i);
+            row.push_back(t ? reinterpret_cast<const char*>(t) : "");
+        }
+        out.push_back(std::move(row));
+    }
+    sqlite3_finalize(stmt);
+    return out;
 }
 
 }  // namespace
@@ -691,6 +720,123 @@ common::Result<ImportReport> IoService::importReqif(const std::string& content) 
 
     report.log = std::move(log);
     return common::Result<ImportReport>::ok(std::move(report));
+}
+
+// ---------------------------------------------------------------------------
+// Export: DO-178C evidence package (WP-D A6). Writes matrix.csv, coverage.csv,
+// coverage_by_method.csv, validation.json, audit.csv and manifest.json into
+// `dir` (created if missing). Every file is non-empty on success.
+// ---------------------------------------------------------------------------
+common::Result<void> IoService::exportEvidencePackage(const std::string& dir) {
+    std::error_code ec;
+    std::filesystem::create_directories(dir, ec);
+    if (ec) {
+        return common::Result<void>::err("cannot create evidence dir: " + ec.message());
+    }
+
+    // matrix.csv (reuses the trace matrix export).
+    auto matrix = matrixCsv();
+    if (matrix.failed()) return common::Result<void>::err(matrix.error());
+    if (!writeFile(dir + "/matrix.csv", matrix.value())) {
+        return common::Result<void>::err("write matrix.csv failed");
+    }
+
+    // coverage.csv (per-requirement design/test coverage).
+    GraphEngine ge(db_);
+    auto cov = ge.coverage();
+    if (cov.failed()) return common::Result<void>::err(cov.error());
+    std::string coverageCsv =
+        "requirement,designed_count,verified_count,percent_designed,percent_verified,"
+        "percent_satisfied\n";
+    for (const auto& row : cov.value().rows) {
+        coverageCsv += row.requirementExternalId + "," +
+                       std::to_string(row.designedCount) + "," +
+                       std::to_string(row.verifiedCount) + "," +
+                       std::to_string(row.percentDesigned) + "," +
+                       std::to_string(row.percentVerified) + "," +
+                       std::to_string(row.percentSatisfied) + "\n";
+    }
+    if (!writeFile(dir + "/coverage.csv", coverageCsv)) {
+        return common::Result<void>::err("write coverage.csv failed");
+    }
+
+    // coverage_by_method.csv (per-requirement verification method + verified flag).
+    auto byMethod = ge.coverageByMethod();
+    if (byMethod.failed()) return common::Result<void>::err(byMethod.error());
+    std::string methodCsv = "requirement,verification_method,verified\n";
+    for (const auto& row : byMethod.value()) {
+        methodCsv += row.requirementExternalId + "," + row.verificationMethod + "," +
+                     (row.verified ? "true" : "false") + "\n";
+    }
+    if (!writeFile(dir + "/coverage_by_method.csv", methodCsv)) {
+        return common::Result<void>::err("write coverage_by_method.csv failed");
+    }
+
+    // validation.json (validation runs + compliance violations).
+    auto valRows = queryRows(
+        db_.handle(),
+        "SELECT id, name, started_at, finished_at, status, summary "
+        "FROM validation_runs ORDER BY started_at;");
+    auto violRows = queryRows(
+        db_.handle(),
+        "SELECT run_id, rule_id, entity_type, entity_id, message, severity, timestamp "
+        "FROM compliance_violations ORDER BY timestamp;");
+    std::string valJson = "{\n  \"validation_runs\": [\n";
+    for (size_t i = 0; i < valRows.size(); ++i) {
+        const auto& r = valRows[i];
+        valJson += "    {\"id\":\"" + r[0] + "\",\"name\":\"" + r[1] +
+                   "\",\"started_at\":\"" + r[2] + "\",\"finished_at\":\"" + r[3] +
+                   "\",\"status\":\"" + r[4] + "\",\"summary\":\"" + r[5] + "\"}";
+        if (i + 1 < valRows.size()) valJson += ",";
+        valJson += "\n";
+    }
+    valJson += "  ],\n  \"violations\": [\n";
+    for (size_t i = 0; i < violRows.size(); ++i) {
+        const auto& r = violRows[i];
+        valJson += "    {\"run_id\":\"" + r[0] + "\",\"rule_id\":\"" + r[1] +
+                   "\",\"entity_type\":\"" + r[2] + "\",\"entity_id\":\"" + r[3] +
+                   "\",\"message\":\"" + r[4] + "\",\"severity\":\"" + r[5] +
+                   "\",\"timestamp\":\"" + r[6] + "\"}";
+        if (i + 1 < violRows.size()) valJson += ",";
+        valJson += "\n";
+    }
+    valJson += "  ]\n}\n";
+    if (!writeFile(dir + "/validation.json", valJson)) {
+        return common::Result<void>::err("write validation.json failed");
+    }
+
+    // audit.csv (append-only audit trail).
+    auto auditRows = queryRows(
+        db_.handle(),
+        "SELECT id, entity_type, entity_id, action, field, old_value, new_value, actor, "
+        "timestamp, change_request_id FROM audit_log ORDER BY timestamp;");
+    std::string auditCsv =
+        "id,entity_type,entity_id,action,field,old_value,new_value,actor,timestamp,"
+        "change_request_id\n";
+    for (const auto& r : auditRows) {
+        auditCsv += joinComma(r) + "\n";
+    }
+    if (!writeFile(dir + "/audit.csv", auditCsv)) {
+        return common::Result<void>::err("write audit.csv failed");
+    }
+
+    // manifest.json (lists every evidence file).
+    const char* files[] = {"matrix.csv", "coverage.csv", "coverage_by_method.csv",
+                           "validation.json", "audit.csv", "manifest.json"};
+    std::string manifest =
+        "{\n  \"package\": \"DO-178C evidence package\",\n  \"generated_at\": \"" +
+        now() + "\",\n  \"files\": [\n";
+    for (size_t i = 0; i < 6; ++i) {
+        manifest += "    \"" + std::string(files[i]) + "\"";
+        if (i + 1 < 6) manifest += ",";
+        manifest += "\n";
+    }
+    manifest += "  ]\n}\n";
+    if (!writeFile(dir + "/manifest.json", manifest)) {
+        return common::Result<void>::err("write manifest.json failed");
+    }
+
+    return common::Result<void>::ok();
 }
 
 }  // namespace lodestar::tracelink

@@ -65,6 +65,14 @@ struct CoverageGap {
     bool hasNoTest = false;
 };
 
+// One requirement's coverage row broken down by verification method (WP-D A5).
+struct CoverageByMethodRow {
+    std::string requirementId;
+    std::string requirementExternalId;
+    std::string verificationMethod;  // from the requirement (test/analysis/...)
+    bool verified = false;           // has >=1 Active verifies link
+};
+
 // One cell of the trace matrix (a requirement x a column).
 struct MatrixCell {
     std::string columnId;
@@ -127,6 +135,10 @@ public:
     common::Result<CoverageReport> coverage();
     common::Result<std::vector<CoverageGap>> coverageGap();
     common::Result<TraceMatrix> traceMatrix();
+
+    // One row per requirement, reporting its verification method and whether
+    // it is verified. Lets an auditor see coverage per method (WP-D A5).
+    common::Result<std::vector<CoverageByMethodRow>> coverageByMethod();
 
 private:
     struct NodeKey {

@@ -44,6 +44,12 @@ public:
     common::Result<std::string> linksCsv();     // link rows (see format)
     common::Result<std::string> reqif();        // ReqIF XML
 
+    // Exports a DO-178C evidence package to `dir` (created if missing):
+    //   matrix.csv, coverage.csv, coverage_by_method.csv, validation.json,
+    //   audit.csv, manifest.json
+    // Each file is non-empty on success. manifest.json lists the files (WP-D A6).
+    common::Result<void> exportEvidencePackage(const std::string& dir);
+
     // --- Imports (non-destructive; always write a batch + log) -------------
     common::Result<ImportReport> importCsv(const std::string& content);
     common::Result<ImportReport> importReqif(const std::string& content);

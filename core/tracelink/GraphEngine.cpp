@@ -253,6 +253,40 @@ common::Result<CoverageReport> GraphEngine::coverage() {
 }
 
 // ---------------------------------------------------------------------------
+// Coverage by verification method (WP-D A5): one row per requirement reporting
+// its verification method and whether it has >=1 Active verifies link.
+// ---------------------------------------------------------------------------
+common::Result<std::vector<CoverageByMethodRow>> GraphEngine::coverageByMethod() {
+    auto reqsRes = service_.listEntities(EntityType::Requirement, EntityFilter{});
+    if (reqsRes.failed()) {
+        return common::Result<std::vector<CoverageByMethodRow>>::err(reqsRes.error());
+    }
+    auto linksRes = service_.allLinks();
+    if (linksRes.failed()) {
+        return common::Result<std::vector<CoverageByMethodRow>>::err(linksRes.error());
+    }
+
+    std::vector<CoverageByMethodRow> rows;
+    for (const auto& req : reqsRes.value()) {
+        CoverageByMethodRow row;
+        row.requirementId = req.id;
+        row.requirementExternalId = req.externalId;
+        row.verificationMethod = req.verificationMethod;
+        row.verified = false;
+        for (const auto& l : linksRes.value()) {
+            if (l.status != "Active") continue;
+            if (l.targetType != EntityType::Requirement || l.targetId != req.id) continue;
+            if (l.relation == "verifies") {
+                row.verified = true;
+                break;
+            }
+        }
+        rows.push_back(std::move(row));
+    }
+    return common::Result<std::vector<CoverageByMethodRow>>::ok(std::move(rows));
+}
+
+// ---------------------------------------------------------------------------
 // Coverage gaps: listed for every requirement; flags indicate missing coverage.
 // ---------------------------------------------------------------------------
 common::Result<std::vector<CoverageGap>> GraphEngine::coverageGap() {
