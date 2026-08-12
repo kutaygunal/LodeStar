@@ -98,10 +98,8 @@ int main(int argc, char** argv) {
     window.refreshAll();
     window.show();
 
-    // Auto-close after a short delay so a headless (offscreen) launch also
-    // terminates cleanly with exit code 0. A real user can close the window
-    // at any time; closing the last window ends the event loop.
-    QTimer::singleShot(1500, &window, &QWidget::close);
+    // NOTE: auto-close timer removed so the window stays open for a real user.
+    // A headless (offscreen) launch can still be terminated externally.
 
     const int rc = app.exec();
     db.close();
