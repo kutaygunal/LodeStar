@@ -32,7 +32,7 @@ REST API + Qt compliance dashboard.
 | 2 | Compliance engine | Run checks against project data; PASS/FAIL/NA/WARNING; DAL applicability; evidence links; assurance_checks storage | High | DONE | - | wp2_assurecheck_tests | e501a77 |
 | 3 | Evidence + integration | Pull requirements/design/test/trace data from TraceLink; test-run results from TestForge as verification evidence | High | DONE | - | wp3_assurecheck_tests | cd32045 |
 | 4 | Compliance reporting | Certification-ready reports per standard/DAL; objective coverage %; export HTML/CSV/JSON | Med | DONE | - | wp4_assurecheck_tests | 9ed8398 |
-| 5 | Performance + hardening | Indexed checks, batched evaluation, incremental re-check, 10k+ scale, WAL/transactions | Med | TODO | - | - | - |
+| 5 | Performance + hardening | Indexed checks, batched evaluation, incremental re-check, 10k+ scale, WAL/transactions | Med | DONE | - | wp5_assurecheck_tests | deb215e |
 | 6 | REST API + Qt UI | /assurecheck endpoints; compliance dashboard view (objective coverage, per-standard status) | Med | TODO | - | - | - |
 
 ## Dependency order
