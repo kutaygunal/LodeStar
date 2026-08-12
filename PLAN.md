@@ -18,8 +18,8 @@ is a CMake static lib target (`lodestar_*`). Schema is append-only migrations in
 | 4 | Audit + baselines + diff | audit_log writes on every mutation; Baselines snapshots; diffBaseline(a,b); history; entityAtBaseline | Medium | DONE | senior-engineer-wp4 | PASS (0 fail; audit/diff acceptance) | adfc439 |
 | 5 | Import/Export | CSV matrix+entities export, HTML report, ReqIF import+export, non-destructive import with batch+log | Medium | DONE | senior-engineer-wp5 | PASS (28/28; round-trip) | 8e40db6 |
 | 6 | REST API | all /tracelink routes in ApiServer; smoke each endpoint | Medium | DONE | senior-engineer-wp6 | PASS (37/37; acceptance chain) | 03d6866 |
-| 7 | Qt UI views | matrix view, graph view, impact view, coverage/compliance dashboard | Medium | TODO | - | - | - |
-| 8 | Commercial hardening | WAL mode, BEGIN IMMEDIATE transactions, performance indexes, 10k-node perf, docs | Low | TODO | - | - | - |
+| 7 | Qt UI views | matrix view, graph view, impact view, coverage/compliance dashboard | Medium | DONE | senior-engineer-wp7 | PASS (34/34 view models; Qt src gated) | 170c18a |
+| 8 | Commercial hardening | WAL mode, BEGIN IMMEDIATE transactions, performance indexes, 10k-node perf, docs | Low | DONE | senior-engineer-wp8 | PASS (22/22; 10k perf 5.25s) | eb75640 |
 
 ## Dependency order
 WP-1 -> WP-2 -> WP-3 -> WP-4 -> WP-5/6 -> WP-7/8. WP-4 audit can start parallel with WP-3.
