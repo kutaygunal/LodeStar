@@ -5,10 +5,12 @@ This is Sprint 1 of the 4-sprint plan (see `docs/reports/sprint-plan.html`). It 
 P0 "make it run" layer: a runnable desktop app, functional adapters, and the two headline
 differentiators (RiskAI, IntegrateHub) no longer stubs.
 
-Status: **IN PROGRESS**
+Status: **COMPLETE**
 Context: Lodestar C++17 CMake monorepo (MSVC/Windows). Build: `cmake --build build --config
 Release` (HARD TIMEOUT). Self-verify: `./build/core/Release/lodestar_smoke.exe`. AssureCheck
 WP-1..WP-6 are DONE and committed. TraceLink, ScenarioForge, AssureCheck are the mature core.
+
+**Sprint 1 "Make it run" is COMPLETE.** All 5 phases DONE and committed (see table).
 
 ## Sprint 1 scope (from sprint-plan.html)
 
@@ -24,11 +26,11 @@ WP-1..WP-6 are DONE and committed. TraceLink, ScenarioForge, AssureCheck are the
 
 | Phase | Work item | Status | Committed | Depends on |
 |-------|-----------|--------|-----------|------------|
-| 1 | Desktop app — enable `LODESTAR_BUILD_UI=ON`, wire `MainWindow` to service API so the app opens and shows TraceLink data. Deliverable: runnable desktop app. | NOT STARTED | — | none (core service API exists) |
-| 2 | Functional adapters — real `invoke()` for Skydel + LLM. Deliverable: one end-to-end RF injection (or simulated) + a real LLM call. | NOT STARTED | — | none |
-| 3 | RiskAI first slice — hazard input → LLM call → FMEA table. Deliverable: working LLM-assisted FMEA. | NOT STARTED | — | Phase 2 (LLM adapter) |
-| 4 | IntegrateHub first slice — cross-disciplinary issue/coordination model. Deliverable: working issue/coordination model. | NOT STARTED | — | none |
-| 5 | Real-time / determinism validation — real-time benchmarks + HIL smoke test. Deliverable: recorded benchmark numbers. | NOT STARTED | — | Phase 2 (Skydel adapter) |
+| 1 | Desktop app — enable `LODESTAR_BUILD_UI=ON`, wire `MainWindow` to service API so the app opens and shows TraceLink data. Deliverable: runnable desktop app. | DONE | 890028e | none (core service API exists) |
+| 2 | Functional adapters — real `invoke()` for Skydel + LLM. Deliverable: one end-to-end RF injection (or simulated) + a real LLM call. | DONE | 2458b63 | none |
+| 3 | RiskAI first slice — hazard input → LLM call → FMEA table. Deliverable: working LLM-assisted FMEA. | DONE | 22cc6b6 | Phase 2 (LLM adapter) |
+| 4 | IntegrateHub first slice — cross-disciplinary issue/coordination model. Deliverable: working issue/coordination model. | DONE | 5ee73ee | none |
+| 5 | Real-time / determinism validation — real-time benchmarks + HIL smoke test. Deliverable: recorded benchmark numbers. | DONE | c606a61 | Phase 2 (Skydel adapter) |
 
 ## Dependency / Parallelization
 
