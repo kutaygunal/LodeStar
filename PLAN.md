@@ -9,7 +9,7 @@ baseband first slices — all real code, all tested). **Sprint 3 makes the
 broad parts credible**: real CI, real coverage instrumentation, a real
 multi-user web/data path, and a review process with a human in the loop.
 
-Status: **IN PROGRESS** — Phase 1 (CI/build reconciliation), Phase 2 (CTest wiring), and Phase 3 (real statement coverage) DONE. Phase 4 (certification-grade exports) is scoped below and ready to start.
+Status: **IN PROGRESS** — Phase 1 (CI/build reconciliation), Phase 2 (CTest wiring), Phase 3 (real statement coverage), and Phase 4 (certification-grade exports) DONE. Phase 5 (human review gate) is next — Phase 4's diff needs a named human reviewer before merge per the Working rules below; it has not had one yet.
 Context: Lodestar C++17 CMake monorepo (MSVC/Windows, vcpkg `x64-windows`).
 Build: `cmake --build build --config Release`. Self-verify:
 `./build/core/Release/lodestar_smoke.exe`. TraceLink, ScenarioForge, and
@@ -24,7 +24,7 @@ them.
 | S3.1 | Reconcile CI with the actual build platform; get one pipeline run genuinely green | Platform/CI | P0 | **DONE** (code) |
 | S3.2 | Wire the 21 phase-test suites into CTest with pass/fail + JUnit/XML output | Platform/CI | P0 | **DONE** |
 | S3.3 | Real structural code coverage (compiler instrumentation, not a stored percentage) | TestForge | P0 | **DONE** (statement only — see below) |
-| S3.4 | Production-grade certification exports (templated, multi-page, evidence-embedded PDF/Word/ReQIF) | AssureCheck | P0 | 4–6 wks |
+| S3.4 | Production-grade certification exports (templated, multi-page, evidence-embedded PDF/Word/ReQIF) | AssureCheck | P0 | **DONE** |
 | S3.5 | Human review gate on every merged phase (process change, see Working rules) | Process | P0 | immediate |
 | S3.6 | Interactive, editable web collaboration layer (JS frontend, real-time multi-user) | Platform | P1 | 8–12 wks |
 | S3.7 | Client-server persistence path for the collaborative/web deployment mode | Platform | P1 | 4–8 wks |
@@ -47,7 +47,80 @@ them.
   1. **Cross-binary aggregation.** With `--cover_children`, the same source file appears once per test binary (a shared header can show up 40+ times in one report). The importer originally let later binaries silently overwrite earlier ones; fixed to union hit-status per line number across all occurrences instead. A fixture-based regression test (`core/test/s3_phase3_tests.cpp`) with two packages touching the same file locks this in.
   2. **CTest's `--timeout` CLI flag doesn't override an explicit per-test `TIMEOUT` property** — verified empirically (Phase 2 set `TIMEOUT 120` on every test; passing `ctest --timeout 600` still killed tests at 120.0Xs). Fixed by making the timeout a CMake cache variable (`LODESTAR_TEST_TIMEOUT_SECS`, default 120) that `ci/run_coverage.ps1` overrides to 900 at configure time in its own build tree, leaving the normal CI gate's tight 120s hang-detection untouched. Even at 900s, two binaries still couldn't complete under instrumentation and are excluded from the coverage run specifically (full evidence and rationale in the script): `lodestar_wp8_tests` (a 10k-entity/50k-link bulk-load test still hadn't finished at 900s — real overhead of per-line breakpoint-trap instrumentation on a 60k-iteration loop, a documented OpenCppCoverage characteristic) and `lodestar_wp5_assurecheck_tests` (has a hardcoded internal 60,000ms *wall-clock* budget assertion — `core/test/wp5_assurecheck_tests.cpp:360` — that measuring real-world speed makes fail under any instrumentation by design, not by any timeout setting). Both still run at full scale in the normal, non-coverage CI test gate; excluding them from the coverage pass only affects which lines get measured, and the report correctly shows their bulk-scale-only lines as unmeasured rather than fabricating them as covered.
   **Not done**: decision and MC/DC coverage. OpenCppCoverage 0.9.9 (the only coverage tool installed) is statement/line-only — verified via `--help`, no branch/decision flag exists. VS Community's bundled LLVM only ships `clang-tidy`/`clang-format`, not `clang-cl`/`llvm-cov`. Getting real decision/MC-DC would need installing additional tooling (clang-cl + llvm-cov, or a commercial engine) — a deliberate scope boundary for this pass, not silently dropped: `decisions_total`/`conditions_total` are left at 0 (honest "not measured") rather than fabricated.
-- **Phase 4 — Certification-grade exports (S3.4).** Move `CertReportService` from single-page/basic-XML output to templated, multi-page, evidence-embedded PDF/Word/ReQIF suitable for an actual audit package. **Full scope brief below — start here.**
+- **Phase 4 — Certification-grade exports (S3.4). DONE.** `CertReportService`
+  (`core/assurecheck/CertReportService.{h,cpp}`) moved from single-page/
+  basic-XML output to templated, multi-page, evidence-embedded PDF/Word/
+  ReQIF. Verified by `core/test/s3_phase4_tests.cpp` (46 assertions across 5
+  sections, 0 failures) plus the original `core/test/s2_phase8_tests.cpp`
+  contract, unchanged and still green (both registered with CTest; full
+  54-test suite 100% passed, ~33s).
+  **What changed, against the seven gaps in the scope brief below:**
+  1. **PDF (`buildPdf`).** Rewritten around a format-agnostic `ReportDoc` +
+     a paginated `pdf::Unit` list: real multi-page output (page objects +
+     content-stream objects generated per page, not one), a bold
+     Helvetica-Bold title, one `Tj` per line (the old single-Tj-blob bug is
+     gone), a 5-column table (Item/Status/DAL/Objective/Evidence) with rule
+     lines and the checklist header re-emitted on continuation pages, and a
+     "Page X of N" footer. No word-wrap (a stated scope boundary, not a
+     silent gap): long cell text is truncated to its column's character
+     budget — see the hand-roll-decision comment at the top of
+     CertReportService.cpp.
+  2. **Word (`exportWord`).** The docx zip now has every part a real docx
+     needs: `docProps/core.xml`, `docProps/app.xml`, `word/styles.xml`,
+     `word/settings.xml`, `word/fontTable.xml`, `word/_rels/document.xml.rels`,
+     and `_rels/.rels` now references `docProps/`. Content is a real
+     `<w:tbl>` for the checklist rows (not one paragraph per line) plus
+     Title/Heading1 styled paragraphs, verified structurally (parsed back
+     out of the zip) by `s3_phase4_tests.cpp` T2, not just "opens in Word" —
+     no Word/LibreOffice instance was available in this session to do that
+     smoke test; do it before calling this fully closed out.
+  3. **ReQIF (`buildReqif`).** Added the missing `DATATYPES` and
+     `SPEC-TYPES` sections (`REQ-TYPE` with `SPEC-ATTRIBUTES`, `TRACE-TYPE`),
+     so `SPEC-OBJECT-TYPE-REF`/`SPEC-RELATION-TYPE-REF`/attribute/datatype
+     refs all resolve — verified by a hand-rolled identifier/reference
+     collector in the test (T3), not just substring presence. Also added a
+     minimal `TOOL-EXTENSIONS` element.
+  4. **Evidence.** `ReportRow` gained a `resultId` field (populated from
+     `CheckResult.id` in `ReportService::buildReport`); `row.evidence` is
+     now rendered as its own table/cell column in both PDF and Word instead
+     of being read and discarded.
+  5. **Workflow audit trail.** `CertReportService` now owns a
+     `WorkflowService` member and pulls `auditLog(row.resultId)` per row
+     into a "Review & Approval Audit Trail" section of both exports —
+     verified end-to-end in `s3_phase4_tests.cpp` T4 (seed → submit → approve
+     → export → assert both actors appear in the extracted PDF text and the
+     Word XML).
+  6. **`traceResultToRequirements` naming.** Renamed to
+     `verifiedRequirementsForTestCase` to match what it actually does
+     (resolve a TraceLink `test_case` entity id to the requirements it
+     verifies); `traceResultToRequirements` kept as a non-breaking
+     deprecated alias so `s2_phase8_tests.cpp` didn't need to change.
+     **Decision, not a default:** did *not* add a TestForge-run-based
+     resolver — `test_runs`/`test_procedures` (migration 002) have no
+     foreign key to TraceLink's `test_case` entities (migration 020's
+     `trace_links` table), so a "real TestForge run id" resolver would have
+     nothing real to resolve through; inventing one would mean either
+     fabricating a link or a schema change, both out of scope here.
+  7. **Test coverage.** New `core/test/s3_phase4_tests.cpp` asserts real
+     structural properties: PDF page count via the `/Type /Pages /Count`
+     object plus a hand-rolled `Tj`-literal text extractor (proves both
+     pagination *and* that no rows were dropped across the page break);
+     docx parsed back out of its own zip format and checked for every
+     required OOXML part plus exact `<w:tbl>`/`<w:tr>` counts; ReQIF
+     type-ref resolution via the identifier/reference collector in point 3.
+     The old `s2_phase8_tests.cpp` (byte-count/substring assertions) is left
+     in place unchanged as a regression/back-compat check, not replaced.
+  **Decision on hand-rolled vs. library (the brief asked for one,
+  explicitly):** stayed hand-rolled. `vcpkg.json` still has exactly one
+  dependency (`sqlite3`); every other binary/text format in this codebase
+  (SkydelAdapter's HTTP client, the OSLC RDF/XML writer, the Cobertura
+  importer) is hand-rolled the same way, and this project's differentiator
+  is being buildable offline/on-prem for an avionics audience, so a new
+  vcpkg dependency was judged a worse trade than the extra format-writing
+  code. Full rationale is in the file header comment of
+  `CertReportService.cpp`. If a future phase needs real text layout
+  (word-wrap, images, per-section headers), that's the point to revisit
+  this call.
 - **Phase 5 — Human review gate (S3.5).** No code phase — a process change: every phase's diff gets a named human reviewer before it merges to `main`. Record the reviewer in the commit trailer.
 - **Phase 6 — Web collaboration layer (S3.6).** Replace the read-only server-rendered `WebServer` pages with a real JS frontend: editing, not just viewing; live updates for concurrent viewers.
 - **Phase 7 — Client-server persistence (S3.7).** Give the web/collaborative deployment mode a real multi-client data path (connection-pooled server DB) instead of a single local SQLite file; keep SQLite for the single-user desktop mode.

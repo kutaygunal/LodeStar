@@ -127,6 +127,7 @@ common::Result<ComplianceReport> ReportService::buildReport(
         row.status = statusToString(res.status);
         row.dalLevel = res.dalLevel;
         row.evidence = evidenceToString(res.evidence);
+        row.resultId = res.id;
 
         // Look up objective text + dal range from the checklist by item_code.
         for (const auto& cm : codeMeta) {

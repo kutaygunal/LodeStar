@@ -27,6 +27,10 @@ struct ReportRow {
     std::string dalLevel;    // item's DAL range (A | A-B | A-C | A-D)
     std::string status;      // PASS | FAIL | NA | WARNING
     std::string evidence;    // evidence links summary
+    // S3 Phase 4: carried through so CertReportService can pull the
+    // workflow audit trail (assurance_workflow_audit, via WorkflowService)
+    // for this row without a second query keyed by item_code.
+    std::string resultId;    // assurance_checks.id this row was built from
 };
 
 // Objective-coverage summary for a report.
