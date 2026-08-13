@@ -830,6 +830,22 @@ if(LODESTAR_BUILD_TESTS)
     target_compile_definitions(lodestar_s3_phase3_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
+    # --- S3 Phase 4: certification-grade exports (depth pass) ----------------
+    # Test contract: PLAN.md "Phase 4 scope brief". Real structural PDF
+    # page-count/text-extraction, real docx-as-zip/OOXML part checks, ReQIF
+    # SPEC-TYPES completeness, evidence + workflow-audit-trail wiring, and
+    # the verifiedRequirementsForTestCase rename. Extends (does not replace)
+    # lodestar_s2_phase8_tests above.
+    add_executable(lodestar_s3_phase4_tests
+        test/s3_phase4_tests.cpp)
+    target_link_libraries(lodestar_s3_phase4_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_s3_phase4_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of
     # relying solely on ci/run_all_tests.{sh,ps1} to grep exit codes. This is
