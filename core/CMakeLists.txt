@@ -119,7 +119,8 @@ target_link_libraries(lodestar_assurecheck PUBLIC
 lodestar_add_module(lodestar_riskai
     riskai/RiskAiService.cpp
     riskai/RequirementQualityService.cpp
-    riskai/FmeaWorkflowService.cpp)
+    riskai/FmeaWorkflowService.cpp
+    riskai/FmeaAssessor.cpp)
 target_link_libraries(lodestar_riskai PUBLIC
     lodestar_common lodestar_adapters lodestar_persistence)
 target_compile_definitions(lodestar_riskai PRIVATE
@@ -862,6 +863,18 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_riskai)
     target_compile_definitions(lodestar_r1_fmea_workflow_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill RiskAI 1.3: FMEA assessment of existing documents ----------
+    # Test contract: docs/gap-fill-plan.md (Module 1.3). Fixture FMEA inputs and
+    # known-good scores: import parsing, checklist quality assessment (completeness,
+    # clarity, severity justification, detection adequacy, risk-scoring consistency),
+    # and per-item improvement recommendations. Deterministic (no live LLM).
+    add_executable(lodestar_r2_fmea_assess_tests
+        test/r2_fmea_assess_tests.cpp)
+    target_link_libraries(lodestar_r2_fmea_assess_tests PRIVATE
+        lodestar_common
+        lodestar_adapters
+        lodestar_riskai)
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of
