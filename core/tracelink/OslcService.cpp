@@ -3,6 +3,7 @@
 
 #include "core/tracelink/OslcService.h"
 
+#include <algorithm>
 #include <cctype>
 #include <string>
 
@@ -160,6 +161,97 @@ common::Result<Entity> OslcService::importRequirementFromOslc(
         }
     }
     return svc_.addEntity(e);
+}
+
+// --- OSLC server slice: discovery + resource-shape catalog (3.5) ----------
+
+common::Result<std::string> OslcService::serviceCatalog(
+    const std::string& baseUri) {
+    if (baseUri.empty()) {
+        return common::Result<std::string>::err(
+            common::ErrorCode::InvalidArgument, "baseUri must not be empty");
+    }
+    std::string xml;
+    xml += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    xml += "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n";
+    xml += "         xmlns:oslc=\"http://open-services.net/ns/core#\"\n";
+    xml += "         xmlns:dcterms=\"http://purl.org/dc/terms/\">\n";
+    xml += "  <oslc:ServiceProvider rdf:about=\"" + xmlEscape(baseUri) + "\">\n";
+    xml += "    <dcterms:title>Lodestar TraceLink OSLC Provider</dcterms:title>\n";
+    xml += "    <oslc:service>\n";
+    xml += "      <oslc:Service rdf:about=\"" + xmlEscape(baseUri) + "#rm\">\n";
+    xml += "        <oslc:domain rdf:resource=\"http://open-services.net/ns/rm#\"/>\n";
+    xml += "        <oslc:resourceShape rdf:resource=\"" +
+           xmlEscape(baseUri) + "/shape\"/>\n";
+    xml += "        <oslc:queryBase rdf:resource=\"" + xmlEscape(baseUri) +
+           "/query\"/>\n";
+    xml += "      </oslc:Service>\n";
+    xml += "    </oslc:service>\n";
+    xml += "  </oslc:ServiceProvider>\n";
+    xml += "</rdf:RDF>\n";
+    return common::Result<std::string>::ok(std::move(xml));
+}
+
+common::Result<std::string> OslcService::resourceShape() {
+    std::string xml;
+    xml += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    xml += "<rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\"\n";
+    xml += "         xmlns:oslc=\"http://open-services.net/ns/core#\"\n";
+    xml += "         xmlns:dcterms=\"http://purl.org/dc/terms/\">\n";
+    xml += "  <oslc:ResourceShape rdf:about=\"#shape\">\n";
+    xml += "    <dcterms:title>Requirement Shape</dcterms:title>\n";
+    auto property = [&xml](const std::string& name, const std::string& range,
+                           bool required) {
+        xml += "    <oslc:property>\n";
+        xml += "      <oslc:Property rdf:about=\"http://purl.org/dc/terms/" + name + "\">\n";
+        xml += "        <oslc:name>" + name + "</oslc:name>\n";
+        xml += "        <oslc:valueType rdf:resource=\"http://open-services.net/ns/core#" + range + "\"/>\n";
+        if (required) xml += "        <oslc:occurs rdf:resource=\"http://open-services.net/ns/core#Exactly-one\"/>\n";
+        else xml += "        <oslc:occurs rdf:resource=\"http://open-services.net/ns/core#Zero-or-one\"/>\n";
+        xml += "      </oslc:Property>\n";
+        xml += "    </oslc:property>\n";
+    };
+    property("identifier", "String", true);
+    property("title", "String", true);
+    property("description", "XMLLiteral", false);
+    xml += "  </oslc:ResourceShape>\n";
+    xml += "</rdf:RDF>\n";
+    return common::Result<std::string>::ok(std::move(xml));
+}
+
+common::Result<std::string> OslcService::queryRequirements(
+    const std::string& titleFilter) {
+    auto all = svc_.listEntities(EntityType::Requirement, EntityFilter{});
+    if (all.failed()) {
+        return common::Result<std::string>::err(all.error());
+    }
+    std::string lowerFilter = titleFilter;
+    std::transform(lowerFilter.begin(), lowerFilter.end(), lowerFilter.begin(),
+                   [](unsigned char c) { return std::tolower(c); });
+
+    std::string xml;
+    xml += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    xml += "<oslc:QueryResult xmlns:oslc=\"http://open-services.net/ns/core#\"\n";
+    xml += "            xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">\n";
+    xml += "  <rdf:Container rdf:parseType=\"Resource\">\n";
+    for (const auto& ent : all.value()) {
+        if (!titleFilter.empty()) {
+            std::string title = ent.name;
+            std::transform(title.begin(), title.end(), title.begin(),
+                           [](unsigned char c) { return std::tolower(c); });
+            if (title.find(lowerFilter) == std::string::npos) continue;
+        }
+        xml += "    <rdf:member rdf:about=\"" + xmlEscape(ent.externalId) +
+               "\">\n";
+        xml += "      <dcterms:identifier xmlns:dcterms=\"http://purl.org/dc/terms/\">" +
+               xmlEscape(ent.externalId) + "</dcterms:identifier>\n";
+        xml += "      <dcterms:title xmlns:dcterms=\"http://purl.org/dc/terms/\">" +
+               xmlEscape(ent.name) + "</dcterms:title>\n";
+        xml += "    </rdf:member>\n";
+    }
+    xml += "  </rdf:Container>\n";
+    xml += "</oslc:QueryResult>\n";
+    return common::Result<std::string>::ok(std::move(xml));
 }
 
 }  // namespace lodestar::tracelink

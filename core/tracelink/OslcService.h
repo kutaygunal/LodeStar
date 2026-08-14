@@ -41,6 +41,20 @@ public:
     common::Result<Entity> importRequirementFromOslc(
         const std::string& oslcResource);
 
+    // --- OSLC server slice: discovery + resource-shape catalog (3.5) ---------
+    // OSLC service discovery document (service catalog) in RDF/XML listing the
+    // services this server provides and the base URI.
+    common::Result<std::string> serviceCatalog(const std::string& baseUri);
+
+    // OSLC resource-shape catalog: describes the properties of a Requirement
+    // resource (identifier, title, description, priority) as an oslc:ResourceShape.
+    common::Result<std::string> resourceShape();
+
+    // OSLC query: returns all requirement resources (or those matching a
+    // substring title filter) as an oslc:QueryResult with an rdf:Container of
+    // oslc_rm:Requirement members. Deterministic.
+    common::Result<std::string> queryRequirements(const std::string& titleFilter = "");
+
 private:
     TraceLinkService& svc_;
 };
