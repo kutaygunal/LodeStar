@@ -91,6 +91,7 @@ lodestar_add_module(lodestar_testforge
     testforge/ReportGenerator.cpp
     testforge/Coverage.cpp
     testforge/CoberturaImport.cpp
+    testforge/LlvmCovImport.cpp
     testforge/SkydelMeasurementProvider.cpp)
 target_link_libraries(lodestar_testforge PUBLIC lodestar_common lodestar_persistence lodestar_adapters)
 target_compile_definitions(lodestar_testforge PRIVATE
@@ -1069,6 +1070,16 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_tracelink)
     target_compile_definitions(lodestar_cc2_security_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill TestForge 4.1: decision / MC-DC coverage ---------------------
+    # Test contract: docs/gap-fill-plan.md (Module 4.1). LlvmCovImport accepts a
+    # real clang/llvm-cov JSON report and populates decisions_total/conditions_total
+    # honestly; known branch structures produce expected counts.
+    add_executable(lodestar_f1_mcdc_tests
+        test/f1_mcdc_tests.cpp)
+    target_link_libraries(lodestar_f1_mcdc_tests PRIVATE
+        lodestar_common
+        lodestar_testforge)
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of

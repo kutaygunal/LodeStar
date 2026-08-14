@@ -40,7 +40,7 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 - [x] CC#2 Security (KDF, sessions, RBAC)
 
 ## Wave 5 — Coverage + ScenarioForge
-- [ ] TestForge 4.1 Decision / MC-DC coverage + `f1_mcdc_tests`
+- [x] TestForge 4.1 Decision / MC-DC coverage + `f1_mcdc_tests`
 - [ ] TestForge 4.2 Tool-qualification evidence pack
 - [ ] ScenarioForge 5.1 HIL stream + `s1_hil_stream_tests`
 - [ ] ScenarioForge 5.2 RTK virtual reference station
