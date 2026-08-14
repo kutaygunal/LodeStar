@@ -120,7 +120,8 @@ lodestar_add_module(lodestar_riskai
     riskai/RiskAiService.cpp
     riskai/RequirementQualityService.cpp
     riskai/FmeaWorkflowService.cpp
-    riskai/FmeaAssessor.cpp)
+    riskai/FmeaAssessor.cpp
+    riskai/RiskReportService.cpp)
 target_link_libraries(lodestar_riskai PUBLIC
     lodestar_common lodestar_adapters lodestar_persistence)
 target_compile_definitions(lodestar_riskai PRIVATE
@@ -875,6 +876,20 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_common
         lodestar_adapters
         lodestar_riskai)
+
+    # --- Gap-Fill RiskAI 1.4: AIAG/VDA-compatible export ---------------------
+    # Test contract: docs/gap-fill-plan.md (Module 1.4). Emits an AIAG-VDA
+    # structured FMEA spreadsheet (CSV) and an HTML review report from a
+    # persisted workflow, and supports round-trip (export -> edit -> re-import)
+    # preserving row identity.
+    add_executable(lodestar_r4_fmea_export_tests
+        test/r4_fmea_export_tests.cpp)
+    target_link_libraries(lodestar_r4_fmea_export_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_riskai)
+    target_compile_definitions(lodestar_r4_fmea_export_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of
