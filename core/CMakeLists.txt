@@ -137,7 +137,8 @@ target_compile_definitions(lodestar_riskai PRIVATE
     LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 # --- IntegrateHub: cross-disciplinary issue/coordination model (S1 Phase 4) ---
 lodestar_add_module(lodestar_integratehub
-    integratehub/IntegrateHubService.cpp)
+    integratehub/IntegrateHubService.cpp
+    integratehub/ImpactAnalysisService.cpp)
 target_link_libraries(lodestar_integratehub PUBLIC
     lodestar_common lodestar_persistence)
 
@@ -970,6 +971,19 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_assurecheck)
     target_compile_definitions(lodestar_a2_live_coverage_view_tests PRIVATE
         LODESTAR_ASSURECHECK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assurecheck/data")
+
+    # --- Gap-Fill IntegrateHub 6.1: PR -> CR -> impact analysis ----------------
+    # Test contract: docs/gap-fill-plan.md (Module 6.1). Formal PR workflow,
+    # CR model linked to it, impact analysis (affected requirements/design/tests/
+    # baselines + unverified-impact risk), approval gating. Migration 031.
+    add_executable(lodestar_i1_impact_tests
+        test/i1_impact_tests.cpp)
+    target_link_libraries(lodestar_i1_impact_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_integratehub)
+    target_compile_definitions(lodestar_i1_impact_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of
