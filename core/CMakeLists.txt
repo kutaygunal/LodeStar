@@ -125,6 +125,7 @@ lodestar_add_module(lodestar_assurecheck
     assurecheck/StandardsContentService.cpp
     assurecheck/SasService.cpp
     assurecheck/CoverageComplianceView.cpp
+    assurecheck/CertChangeControlService.cpp
     assurecheck/stub.cpp)
 target_link_libraries(lodestar_assurecheck PUBLIC
     lodestar_common lodestar_persistence lodestar_tracelink lodestar_testforge)
@@ -981,6 +982,19 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_assurecheck)
     target_compile_definitions(lodestar_a2_live_coverage_view_tests PRIVATE
         LODESTAR_ASSURECHECK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assurecheck/data")
+
+    # --- Gap-Fill AssureCheck 2.4: certification change/impact control ----------
+    # Test contract: docs/gap-fill-plan.md (Module 2.4). Wires IntegrateHub
+    # CR/impact into a DO-178C configuration-control view + change-impact report.
+    add_executable(lodestar_a4_cert_change_control_tests
+        test/a4_cert_change_control_tests.cpp)
+    target_link_libraries(lodestar_a4_cert_change_control_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck
+        lodestar_integratehub)
+    target_compile_definitions(lodestar_a4_cert_change_control_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- Gap-Fill IntegrateHub 6.1: PR -> CR -> impact analysis ----------------
     # Test contract: docs/gap-fill-plan.md (Module 6.1). Formal PR workflow,

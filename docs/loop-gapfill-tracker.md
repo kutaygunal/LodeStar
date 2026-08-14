@@ -26,6 +26,7 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 - [x] AssureCheck 2.2 Vetted standards-content library
 - [x] AssureCheck 2.1 SAS / PSAC-style generation + `a1_sas_tests`
 - [x] AssureCheck 2.3 Unified live coverage view + `a2_live_coverage_view_tests`
+- [x] AssureCheck 2.4 Certification change/impact control
 - [x] IntegrateHub 6.1 PR → CR → impact analysis + `i1_impact_tests`
 
 **Wave 3 DONE** — 3 AssureCheck + 1 IntegrateHub CTest targets green.
@@ -42,7 +43,6 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 ## Wave 5 — Coverage + ScenarioForge
 - [x] TestForge 4.1 Decision / MC-DC coverage + `f1_mcdc_tests`
 - [x] TestForge 4.2 Tool-qualification evidence pack
-- [ ] TestForge 4.2 Tool-qualification evidence pack
 - [x] ScenarioForge 5.1 HIL stream + `s1_hil_stream_tests`
 - [x] ScenarioForge 5.2 RTK virtual reference station
 - [x] ScenarioForge 5.3 A-GNSS assistance-data generation
