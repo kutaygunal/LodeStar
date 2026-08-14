@@ -46,7 +46,8 @@ lodestar_add_module(lodestar_tracelink
     tracelink/RbacService.cpp
     tracelink/UserService.cpp
     tracelink/OslcService.cpp
-    tracelink/VariantService.cpp)
+    tracelink/VariantService.cpp
+    tracelink/CollaborationService.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
 # --- ScenarioForge (real GNSS math, Phase 4) ---------------------------------
@@ -983,6 +984,19 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_integratehub)
     target_compile_definitions(lodestar_i1_impact_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill TraceLink 3.2: real-time multi-user collaboration ------------
+    # Test contract: docs/gap-fill-plan.md (Module 3.2). Operation log with
+    # version vectors, optimistic concurrency with conflict detection, and merge
+    # + conflict resolution. Migration 032.
+    add_executable(lodestar_t1_collab_tests
+        test/t1_collab_tests.cpp)
+    target_link_libraries(lodestar_t1_collab_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_t1_collab_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------

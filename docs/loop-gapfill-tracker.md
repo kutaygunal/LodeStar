@@ -28,9 +28,11 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 - [x] AssureCheck 2.3 Unified live coverage view + `a2_live_coverage_view_tests`
 - [x] IntegrateHub 6.1 PR → CR → impact analysis + `i1_impact_tests`
 
+**Wave 3 DONE** — 3 AssureCheck + 1 IntegrateHub CTest targets green.
+
 ## Wave 4 — Collaboration
 - [ ] TraceLink 3.1 Client–server persistence path
-- [ ] TraceLink 3.2 Real-time multi-user collaboration + `t1_collab_tests`
+- [x] TraceLink 3.2 Real-time multi-user collaboration + `t1_collab_tests`
 - [ ] TraceLink 3.3 Variant / module reuse management
 - [ ] TraceLink 3.4 Electronic signatures
 - [ ] TraceLink 3.5 OSLC integration ecosystem
