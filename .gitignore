@@ -52,3 +52,7 @@ lodestar_wpF_log.jsonl
 # the working directory it's invoked from. build/coverage/*.xml is already
 # covered by build/ above.
 LastCoverageResults.log
+
+# MSVC local build + helper
+build-msvc/
+_msvc_build.bat
