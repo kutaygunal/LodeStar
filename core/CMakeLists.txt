@@ -92,6 +92,7 @@ lodestar_add_module(lodestar_testforge
     testforge/Coverage.cpp
     testforge/CoberturaImport.cpp
     testforge/LlvmCovImport.cpp
+    testforge/ToolQualificationDossier.cpp
     testforge/SkydelMeasurementProvider.cpp)
 target_link_libraries(lodestar_testforge PUBLIC lodestar_common lodestar_persistence lodestar_adapters)
 target_compile_definitions(lodestar_testforge PRIVATE
@@ -1078,6 +1079,16 @@ if(LODESTAR_BUILD_TESTS)
     add_executable(lodestar_f1_mcdc_tests
         test/f1_mcdc_tests.cpp)
     target_link_libraries(lodestar_f1_mcdc_tests PRIVATE
+        lodestar_common
+        lodestar_testforge)
+
+    # --- Gap-Fill TestForge 4.2: tool-qualification evidence pack ---------------
+    # Test contract: docs/gap-fill-plan.md (Module 4.2). DO-330 dossier
+    # (purpose, operational environment, verification results, deviation/limitation
+    # log) with exact toolchain versions, reproducibility hash, and re-run validation.
+    add_executable(lodestar_f2_tool_qual_dossier_tests
+        test/f2_tool_qual_dossier_tests.cpp)
+    target_link_libraries(lodestar_f2_tool_qual_dossier_tests PRIVATE
         lodestar_common
         lodestar_testforge)
 
