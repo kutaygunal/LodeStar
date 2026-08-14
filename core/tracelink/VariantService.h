@@ -81,6 +81,23 @@ public:
     common::Result<MergeResult> mergeBranch(const std::string& branchId,
                                             const std::string& targetVariantId);
 
+    // --- Variant attribute inheritance / override (3.3) ---------------------
+    // Sets an attribute override for a requirement on a variant. Without an
+    // override, a variant inherits the base value (the effective value).
+    common::Result<void> setAttributeOverride(const std::string& variantId,
+                                              const std::string& requirementId,
+                                              const std::string& attribute,
+                                              const std::string& value);
+    // Clears an override so the variant inherits the base value again.
+    common::Result<void> clearAttributeOverride(const std::string& variantId,
+                                                const std::string& requirementId,
+                                                const std::string& attribute);
+    // The effective attribute value for a requirement on a variant: the
+    // override if set, otherwise the supplied base value.
+    common::Result<std::string> effectiveAttribute(
+        const std::string& variantId, const std::string& requirementId,
+        const std::string& attribute, const std::string& baseValue);
+
 private:
     persistence::Database& db_;
 };

@@ -33,7 +33,7 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 ## Wave 4 — Collaboration
 - [ ] TraceLink 3.1 Client–server persistence path
 - [x] TraceLink 3.2 Real-time multi-user collaboration + `t1_collab_tests`
-- [ ] TraceLink 3.3 Variant / module reuse management
+- [x] TraceLink 3.3 Variant / module reuse management
 - [x] TraceLink 3.4 Electronic signatures
 - [ ] TraceLink 3.5 OSLC integration ecosystem
 - [ ] CC#1 Multi-user web/review layer

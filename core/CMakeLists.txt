@@ -1013,6 +1013,18 @@ if(LODESTAR_BUILD_TESTS)
     target_compile_definitions(lodestar_t4_signature_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
+    # --- Gap-Fill TraceLink 3.3: variant attribute inheritance/override ---------
+    # Test contract: docs/gap-fill-plan.md (Module 3.3). Requirement attribute
+    # inheritance/override per variant (reusable modules). Migration 034.
+    add_executable(lodestar_t3_variant_override_tests
+        test/t3_variant_override_tests.cpp)
+    target_link_libraries(lodestar_t3_variant_override_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_t3_variant_override_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of
     # relying solely on ci/run_all_tests.{sh,ps1} to grep exit codes. This is

@@ -416,4 +416,68 @@ common::Result<MergeResult> VariantService::mergeBranch(const std::string& branc
     return common::Result<MergeResult>::ok(std::move(result));
 }
 
+// --- Variant attribute inheritance / override (3.3) -------------------------
+
+common::Result<void> VariantService::setAttributeOverride(
+    const std::string& variantId, const std::string& requirementId,
+    const std::string& attribute, const std::string& value) {
+    if (variantId.empty() || requirementId.empty() || attribute.empty()) {
+        return common::Result<void>::err(common::ErrorCode::InvalidArgument,
+                                         "variantId/requirementId/attribute "
+                                         "must not be empty");
+    }
+    auto res = exec(db_.handle(),
+                    "INSERT INTO variant_attribute_override "
+                    "(variant_id, requirement_id, attribute, value, version, "
+                    " updated_at) VALUES (?,?,?,?,?,?) "
+                    "ON CONFLICT(variant_id, requirement_id, attribute) "
+                    "DO UPDATE SET value=excluded.value, version=version+1, "
+                    " updated_at=excluded.updated_at;",
+                    {variantId, requirementId, attribute, value, "0", ""});
+    if (res.failed()) {
+        return common::Result<void>::err(res.error());
+    }
+    return common::Result<void>::ok();
+}
+
+common::Result<void> VariantService::clearAttributeOverride(
+    const std::string& variantId, const std::string& requirementId,
+    const std::string& attribute) {
+    if (variantId.empty() || requirementId.empty() || attribute.empty()) {
+        return common::Result<void>::err(common::ErrorCode::InvalidArgument,
+                                         "variantId/requirementId/attribute "
+                                         "must not be empty");
+    }
+    auto res = exec(db_.handle(),
+                    "DELETE FROM variant_attribute_override WHERE variant_id=? "
+                    "AND requirement_id=? AND attribute=?;",
+                    {variantId, requirementId, attribute});
+    if (res.failed()) {
+        return common::Result<void>::err(res.error());
+    }
+    return common::Result<void>::ok();
+}
+
+common::Result<std::string> VariantService::effectiveAttribute(
+    const std::string& variantId, const std::string& requirementId,
+    const std::string& attribute, const std::string& baseValue) {
+    if (variantId.empty() || requirementId.empty() || attribute.empty()) {
+        return common::Result<std::string>::err(
+            common::ErrorCode::InvalidArgument,
+            "variantId/requirementId/attribute must not be empty");
+    }
+    auto rows = query(db_.handle(),
+                      "SELECT value FROM variant_attribute_override WHERE "
+                      "variant_id=? AND requirement_id=? AND attribute=?;",
+                      {variantId, requirementId, attribute}, 1);
+    if (rows.failed()) {
+        return common::Result<std::string>::err(rows.error());
+    }
+    if (rows.value().empty()) {
+        // No override -> inherit the base value.
+        return common::Result<std::string>::ok(baseValue);
+    }
+    return common::Result<std::string>::ok(rows.value()[0][0]);
+}
+
 }  // namespace lodestar::tracelink
