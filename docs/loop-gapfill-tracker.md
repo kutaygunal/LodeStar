@@ -31,7 +31,7 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 **Wave 3 DONE** — 3 AssureCheck + 1 IntegrateHub CTest targets green.
 
 ## Wave 4 — Collaboration
-- [ ] TraceLink 3.1 Client–server persistence path
+- [x] TraceLink 3.1 Client–server persistence path
 - [x] TraceLink 3.2 Real-time multi-user collaboration + `t1_collab_tests`
 - [x] TraceLink 3.3 Variant / module reuse management
 - [x] TraceLink 3.4 Electronic signatures

@@ -20,8 +20,9 @@ target_compile_definitions(lodestar_common PRIVATE _CRT_SECURE_NO_WARNINGS)
 lodestar_add_module(lodestar_persistence
     persistence/Database.cpp
     persistence/MigrationRunner.cpp
-    persistence/daos.cpp)
-target_link_libraries(lodestar_persistence PUBLIC lodestar_common)
+    persistence/daos.cpp
+    persistence/ServerPersistence.cpp)
+target_link_libraries(lodestar_persistence PUBLIC lodestar_common lodestar_adapters)
 target_link_libraries(lodestar_persistence PUBLIC unofficial::sqlite3::sqlite3)
 target_compile_definitions(lodestar_persistence PRIVATE
     LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
@@ -1036,6 +1037,24 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_tracelink)
     target_compile_definitions(lodestar_t5_oslc_server_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill TraceLink 3.1: client-server persistence path -----------------
+    # Test contract: docs/gap-fill-plan.md (Module 3.1). Server-backed persistence
+    # adapter over the REST API (web/multi-user backend) with parity against the
+    # SQLite default; runs the same requirement operations against both.
+    add_executable(lodestar_t1_server_persistence_tests
+        test/t1_server_persistence_tests.cpp)
+    target_link_libraries(lodestar_t1_server_persistence_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink
+        lodestar_api
+        lodestar_adapters)
+    if(WIN32)
+        target_link_libraries(lodestar_t1_server_persistence_tests PRIVATE ws2_32)
+    endif()
+    target_compile_definitions(lodestar_t1_server_persistence_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
