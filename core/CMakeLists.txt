@@ -115,6 +115,7 @@ lodestar_add_module(lodestar_assurecheck
     assurecheck/TemplateService.cpp
     assurecheck/StandardsContentService.cpp
     assurecheck/SasService.cpp
+    assurecheck/CoverageComplianceView.cpp
     assurecheck/stub.cpp)
 target_link_libraries(lodestar_assurecheck PUBLIC
     lodestar_common lodestar_persistence lodestar_tracelink lodestar_testforge)
@@ -955,6 +956,19 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_assurecheck)
     target_compile_definitions(lodestar_a1_sas_tests PRIVATE
+        LODESTAR_ASSURECHECK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assurecheck/data")
+
+    # --- Gap-Fill AssureCheck 2.3: unified live coverage view ------------------
+    # Test contract: docs/gap-fill-plan.md (Module 2.3). Maps measured coverage
+    # to DO-178C verification objectives (A-3..A-7) with per-objective status
+    # compliant/partial/no-evidence and honest (non-fabricated) evidence.
+    add_executable(lodestar_a2_live_coverage_view_tests
+        test/a2_live_coverage_view_tests.cpp)
+    target_link_libraries(lodestar_a2_live_coverage_view_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck)
+    target_compile_definitions(lodestar_a2_live_coverage_view_tests PRIVATE
         LODESTAR_ASSURECHECK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assurecheck/data")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------

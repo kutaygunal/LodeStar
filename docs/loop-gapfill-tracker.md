@@ -25,7 +25,7 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 ## Wave 3 — Cert evidence
 - [x] AssureCheck 2.2 Vetted standards-content library
 - [x] AssureCheck 2.1 SAS / PSAC-style generation + `a1_sas_tests`
-- [ ] AssureCheck 2.3 Unified live coverage view + `a2_live_coverage_view_tests`
+- [x] AssureCheck 2.3 Unified live coverage view + `a2_live_coverage_view_tests`
 - [ ] IntegrateHub 6.1 PR → CR → impact analysis + `i1_impact_tests`
 
 ## Wave 4 — Collaboration
