@@ -83,7 +83,8 @@ lodestar_add_module(lodestar_scenario
     scenario/RfImpairments.cpp
     scenario/HilStream.cpp
     scenario/RtkReferenceStation.cpp
-    scenario/AGnssAssistance.cpp)
+    scenario/AGnssAssistance.cpp
+    scenario/MultiGnssBaseband.cpp)
 target_link_libraries(lodestar_scenario PUBLIC lodestar_common)
 
 # --- Stub modules (empty libraries that compile) ----------------------------
@@ -1119,6 +1120,16 @@ if(LODESTAR_BUILD_TESTS)
     add_executable(lodestar_s3_rtk_agnss_tests
         test/s3_rtk_agnss_tests.cpp)
     target_link_libraries(lodestar_s3_rtk_agnss_tests PRIVATE
+        lodestar_common
+        lodestar_scenario)
+
+    # --- Gap-Fill ScenarioForge 5.5: multi-GNSS baseband synthesis ---------------
+    # Test contract: docs/gap-fill-plan.md (Module 5.5). First-party software
+    # baseband for GPS/GLONASS/BeiDou producing valid per-constellation I/Q frames
+    # (scoped: no RF overclaim).
+    add_executable(lodestar_s4_multignss_tests
+        test/s4_multignss_tests.cpp)
+    target_link_libraries(lodestar_s4_multignss_tests PRIVATE
         lodestar_common
         lodestar_scenario)
 

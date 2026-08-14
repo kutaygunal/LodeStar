@@ -47,5 +47,5 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 - [x] ScenarioForge 5.2 RTK virtual reference station
 - [x] ScenarioForge 5.3 A-GNSS assistance-data generation
 - [x] ScenarioForge 5.4 Advanced interference & multipath depth + `s2_interference_tests`
-- [ ] ScenarioForge 5.5 First-party baseband / multi-GNSS synthesis
+- [x] ScenarioForge 5.5 First-party baseband / multi-GNSS synthesis
 - [ ] IntegrateHub 6.2 Integration with certification control
