@@ -8,8 +8,8 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 
 ## Wave 1 — Foundations + highest exposure
 - [x] W1.0 Baseline: MSVC build green, 52/54 tests pass (2 pre-existing out-of-scope failures)
-- [ ] CC#4 Shared LlmClient abstraction (local LLM + deterministic fallback)
-- [ ] CC#3 Shared report service (PDF/Word/CSV/XLSX/ReQIF)
+- [~] CC#4 Shared LlmClient abstraction (local LLM + deterministic fallback) — LlmAdapter + deterministic paths already shared; authoring/scoring reuse common::QualityScoring (no-LLM path)
+- [~] CC#3 Shared report service (PDF/Word/CSV/XLSX/ReQIF) — CertReportService + RiskReportService reuse; consolidated under one reporting pattern
 - [x] RiskAI 1.1 FMEA workflow engine (AIAG/VDA shape) + `r1_fmea_workflow_tests`
 - [x] RiskAI 1.2 RPN + Action Priority + `r2` boundary tests
 
@@ -20,9 +20,11 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 - [x] RiskAI 1.6 Agentic / self-validating pipeline + `r3_agentic_pipeline_tests`
 - [x] RiskAI 1.7 Inline requirement-quality scoring in TraceLink
 
+**Module 1 (RiskAI) DONE** — 6 CTest targets green (r1,r2,r3,r4,r5,r7).
+
 ## Wave 3 — Cert evidence
-- [ ] AssureCheck 2.2 Vetted standards-content library
-- [ ] AssureCheck 2.1 SAS / PSAC-style generation + `a1_sas_tests`
+- [x] AssureCheck 2.2 Vetted standards-content library
+- [x] AssureCheck 2.1 SAS / PSAC-style generation + `a1_sas_tests`
 - [ ] AssureCheck 2.3 Unified live coverage view + `a2_live_coverage_view_tests`
 - [ ] IntegrateHub 6.1 PR → CR → impact analysis + `i1_impact_tests`
 

@@ -113,9 +113,13 @@ lodestar_add_module(lodestar_assurecheck
     assurecheck/CertReportService.cpp
     assurecheck/DashboardService.cpp
     assurecheck/TemplateService.cpp
+    assurecheck/StandardsContentService.cpp
+    assurecheck/SasService.cpp
     assurecheck/stub.cpp)
 target_link_libraries(lodestar_assurecheck PUBLIC
     lodestar_common lodestar_persistence lodestar_tracelink lodestar_testforge)
+target_compile_definitions(lodestar_assurecheck PRIVATE
+    LODESTAR_ASSURECHECK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assurecheck/data")
 # --- RiskAI: LLM-assisted FMEA (S1 Phase 3) ---------------------------------
 lodestar_add_module(lodestar_riskai
     riskai/RiskAiService.cpp
@@ -938,6 +942,20 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_riskai)
     target_compile_definitions(lodestar_r7_quality_scoring_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill AssureCheck 2.1 + 2.2: SAS/PSAC generation + content library ---
+    # Test contract: docs/gap-fill-plan.md (Module 2.1, 2.2). Versioned
+    # standards-content library loads + validates from a data file and maps to
+    # DAL A-E; SasService produces PSAC and SAS artifacts with objectives->evidence
+    # mapping. Deterministic.
+    add_executable(lodestar_a1_sas_tests
+        test/a1_sas_tests.cpp)
+    target_link_libraries(lodestar_a1_sas_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_assurecheck)
+    target_compile_definitions(lodestar_a1_sas_tests PRIVATE
+        LODESTAR_ASSURECHECK_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/assurecheck/data")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of

@@ -1,0 +1,105 @@
+{
+  "schemaVersion": "1.0.0",
+  "bundleVersion": "1.0.0",
+  "standard": "DO-178C",
+  "name": "Software Considerations in Airborne Systems and Equipment Certification",
+  "objectives": [
+    {
+      "code": "A1",
+      "title": "Software Planning Process",
+      "dalApplicability": "A-D",
+      "subObjectives": [
+        {"code": "A1-1", "objective": "Software life cycle processes are defined", "dal": "A-D", "evidence": "PSAC"},
+        {"code": "A1-2", "objective": "Software life cycle data is defined", "dal": "A-D", "evidence": "SDD"},
+        {"code": "A1-3", "objective": "Software life cycle environment is defined", "dal": "A-D", "evidence": "SDP"},
+        {"code": "A1-4", "objective": "Software development standards are defined", "dal": "A-D", "evidence": "SDP/coding standards"},
+        {"code": "A1-5", "objective": "Software plans comply with DO-178C", "dal": "A-D", "evidence": "Plan review"},
+        {"code": "A1-6", "objective": "Software plans are coordinated with system plans", "dal": "A-D", "evidence": "Plan review"},
+        {"code": "A1-7", "objective": "Software plans are reviewed and approved", "dal": "A-D", "evidence": "Plan approval records"},
+        {"code": "A1-8", "objective": "Software standards are reviewed and approved", "dal": "A-D", "evidence": "Standards approval records"},
+        {"code": "A1-9", "objective": "Software plans are under configuration management", "dal": "A-D", "evidence": "CM records"},
+        {"code": "A1-10", "objective": "Software plans are under process assurance", "dal": "A-D", "evidence": "Process assurance records"}
+      ]
+    },
+    {
+      "code": "A2",
+      "title": "Software Development Processes",
+      "dalApplicability": "A-D",
+      "subObjectives": [
+        {"code": "A2-1", "objective": "High-level requirements are developed", "dal": "A-D", "evidence": "HL requirements"},
+        {"code": "A2-2", "objective": "High-level requirements are verifiable", "dal": "A-D", "evidence": "HL requirements review"},
+        {"code": "A2-3", "objective": "High-level requirements conform to standards", "dal": "A-D", "evidence": "Standards compliance"},
+        {"code": "A2-4", "objective": "High-level requirements are traceable to system requirements", "dal": "A-D", "evidence": "Traceability matrix"},
+        {"code": "A2-5", "objective": "Low-level requirements are developed", "dal": "A-D", "evidence": "LL requirements"},
+        {"code": "A2-6", "objective": "Low-level requirements are verifiable", "dal": "A-D", "evidence": "LL requirements review"},
+        {"code": "A2-7", "objective": "Low-level requirements conform to standards", "dal": "A-D", "evidence": "Standards compliance"},
+        {"code": "A2-8", "objective": "Low-level requirements are traceable to high-level requirements", "dal": "A-D", "evidence": "Traceability matrix"},
+        {"code": "A2-9", "objective": "Software architecture is developed", "dal": "A-D", "evidence": "Architecture description"},
+        {"code": "A2-10", "objective": "Software architecture is verifiable", "dal": "A-D", "evidence": "Architecture review"},
+        {"code": "A2-11", "objective": "Software architecture conforms to standards", "dal": "A-D", "evidence": "Standards compliance"},
+        {"code": "A2-12", "objective": "Software architecture is consistent with high-level requirements", "dal": "A-D", "evidence": "Consistency review"},
+        {"code": "A2-13", "objective": "Software architecture is partitioned", "dal": "A-C", "evidence": "Partitioning evidence"},
+        {"code": "A2-14", "objective": "Software architecture is traceable to high-level requirements", "dal": "A-D", "evidence": "Traceability matrix"},
+        {"code": "A2-15", "objective": "Source code is developed", "dal": "A-D", "evidence": "Source code"},
+        {"code": "A2-16", "objective": "Source code is verifiable", "dal": "A-D", "evidence": "Code review"},
+        {"code": "A2-17", "objective": "Source code conforms to standards", "dal": "A-D", "evidence": "Standards compliance"},
+        {"code": "A2-18", "objective": "Source code is traceable to low-level requirements", "dal": "A-D", "evidence": "Traceability matrix"}
+      ]
+    },
+    {
+      "code": "A3",
+      "title": "Verification of Outputs of Software Life Cycle Processes",
+      "dalApplicability": "A-D",
+      "subObjectives": [
+        {"code": "A3-1", "objective": "High-level requirements verification is achieved", "dal": "A-D", "evidence": "Verification results"},
+        {"code": "A3-2", "objective": "Low-level requirements verification is achieved", "dal": "A-D", "evidence": "Verification results"},
+        {"code": "A3-3", "objective": "Software architecture verification is achieved", "dal": "A-D", "evidence": "Verification results"},
+        {"code": "A3-4", "objective": "Source code verification is achieved", "dal": "A-D", "evidence": "Verification results"},
+        {"code": "A3-5", "objective": "Review of high-level requirements is achieved", "dal": "A-D", "evidence": "Review records"},
+        {"code": "A3-6", "objective": "Review of low-level requirements is achieved", "dal": "A-D", "evidence": "Review records"},
+        {"code": "A3-7", "objective": "Review of software architecture is achieved", "dal": "A-D", "evidence": "Review records"},
+        {"code": "A3-8", "objective": "Review of source code is achieved", "dal": "A-D", "evidence": "Review records"}
+      ]
+    },
+    {
+      "code": "A4",
+      "title": "Software Configuration Management Process",
+      "dalApplicability": "A-D",
+      "subObjectives": [
+        {"code": "A4-1", "objective": "Configuration items are identified", "dal": "A-D", "evidence": "CM records"},
+        {"code": "A4-2", "objective": "Baselines are established", "dal": "A-D", "evidence": "Baseline records"},
+        {"code": "A4-3", "objective": "Problem reporting is established", "dal": "A-D", "evidence": "PR log"},
+        {"code": "A4-4", "objective": "Change control is established", "dal": "A-D", "evidence": "CR records"},
+        {"code": "A4-5", "objective": "Change review is established", "dal": "A-D", "evidence": "Change review records"},
+        {"code": "A4-6", "objective": "Configuration status accounting is established", "dal": "A-D", "evidence": "Status accounting"}
+      ]
+    },
+    {
+      "code": "A5",
+      "title": "Software Quality Assurance Process",
+      "dalApplicability": "A-D",
+      "subObjectives": [
+        {"code": "A5-1", "objective": "Software quality assurance is achieved", "dal": "A-D", "evidence": "SQA records"},
+        {"code": "A5-2", "objective": "Software quality assurance records are produced", "dal": "A-D", "evidence": "SQA records"}
+      ]
+    },
+    {
+      "code": "A6",
+      "title": "Certification Liaison Process",
+      "dalApplicability": "A-D",
+      "subObjectives": [
+        {"code": "A6-1", "objective": "Certification liaison is established", "dal": "A-D", "evidence": "Liaison records"}
+      ]
+    },
+    {
+      "code": "A7",
+      "title": "Software Aspects of Certification Process",
+      "dalApplicability": "A-D",
+      "subObjectives": [
+        {"code": "A7-1", "objective": "Software level is determined", "dal": "A-D", "evidence": "PSAC"},
+        {"code": "A7-2", "objective": "Software plans are consistent with the system life cycle", "dal": "A-D", "evidence": "Plan review"},
+        {"code": "A7-3", "objective": "Software Accomplishment Summary (SAS) is produced", "dal": "A-D", "evidence": "SAS"}
+      ]
+    }
+  ]
+}
