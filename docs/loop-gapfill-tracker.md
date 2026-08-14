@@ -37,7 +37,7 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 - [x] TraceLink 3.3 Variant / module reuse management
 - [x] TraceLink 3.4 Electronic signatures
 - [x] TraceLink 3.5 OSLC integration ecosystem
-- [ ] CC#1 Multi-user web/review layer
+- [x] CC#1 Multi-user web/review layer
 - [x] CC#2 Security (KDF, sessions, RBAC)
 
 ## Wave 5 — Coverage + ScenarioForge

@@ -18,7 +18,9 @@
 #include "core/api/HttpServer.h"
 #include "core/assurecheck/AssureCheckService.h"
 #include "core/assurecheck/ComplianceEngine.h"
+#include "core/integratehub/ImpactAnalysisService.h"
 #include "core/persistence/Database.h"
+#include "core/riskai/FmeaWorkflowService.h"
 #include "core/tracelink/TraceLinkService.h"
 #include "core/tracelink/UserService.h"
 
@@ -36,6 +38,8 @@ private:
     HttpResponse webRequirements(const HttpRequest& req);
     HttpResponse webTrace(const HttpRequest& req);
     HttpResponse webAssure(const HttpRequest& req);
+    HttpResponse webRiskai(const HttpRequest& req);
+    HttpResponse webIntegratehub(const HttpRequest& req);
 
     // Auth helpers.
     std::string currentRole(const HttpRequest& req);

@@ -183,7 +183,9 @@ target_link_libraries(lodestar_api PUBLIC
     lodestar_adapters
     lodestar_scenario
     lodestar_tracelink
-    lodestar_assurecheck)
+    lodestar_assurecheck
+    lodestar_riskai
+    lodestar_integratehub)
 if(WIN32)
     target_link_libraries(lodestar_api PUBLIC ws2_32)
 endif()
@@ -1122,6 +1124,24 @@ if(LODESTAR_BUILD_TESTS)
     target_link_libraries(lodestar_cc3_shared_report_tests PRIVATE
         lodestar_common
         lodestar_assurecheck)
+
+    # --- Gap-Fill Cross-cutting #1: multi-user web/review layer ------------------
+    # Test contract: docs/gap-fill-plan.md (Cross-cutting #1). The web layer
+    # exposes REST/web routes so it can drive every module (RiskAI, IntegrateHub).
+    add_executable(lodestar_cc1_web_review_tests
+        test/cc1_web_review_tests.cpp)
+    target_link_libraries(lodestar_cc1_web_review_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_riskai
+        lodestar_integratehub
+        lodestar_api
+        lodestar_adapters)
+    if(WIN32)
+        target_link_libraries(lodestar_cc1_web_review_tests PRIVATE ws2_32)
+    endif()
+    target_compile_definitions(lodestar_cc1_web_review_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- Gap-Fill TestForge 4.1: decision / MC-DC coverage ---------------------
     # Test contract: docs/gap-fill-plan.md (Module 4.1). LlvmCovImport accepts a

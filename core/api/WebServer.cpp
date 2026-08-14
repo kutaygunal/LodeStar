@@ -17,6 +17,8 @@ namespace lodestar::api {
 
 namespace tl = lodestar::tracelink;
 namespace ac = lodestar::assurecheck;
+namespace ra = lodestar::riskai;
+namespace ih = lodestar::integratehub;
 
 namespace {
 
@@ -86,6 +88,10 @@ void WebServer::setup(HttpServer& server) {
                  [this](const HttpRequest& r) { return webTrace(r); });
     server.route("GET", "/web/assure",
                  [this](const HttpRequest& r) { return webAssure(r); });
+    server.route("GET", "/web/riskai",
+                 [this](const HttpRequest& r) { return webRiskai(r); });
+    server.route("GET", "/web/integratehub",
+                 [this](const HttpRequest& r) { return webIntegratehub(r); });
 }
 
 // ---------------------------------------------------------------------------
@@ -128,6 +134,8 @@ HttpResponse WebServer::webRoot(const HttpRequest& req) {
     html += "<li><a href=\"/web/requirements\">Requirements</a></li>";
     html += "<li><a href=\"/web/trace\">Trace Matrix</a></li>";
     html += "<li><a href=\"/web/assure\">AssureCheck Compliance</a></li>";
+    html += "<li><a href=\"/web/riskai\">RiskAI FMEA</a></li>";
+    html += "<li><a href=\"/web/integratehub\">IntegrateHub</a></li>";
     html += "</ul>";
     html += pageFooter();
     HttpResponse r;
@@ -263,6 +271,82 @@ HttpResponse WebServer::webAssure(const HttpRequest& req) {
         html += "<p>Compliance summary unavailable: " +
                 htmlEscape(sum.error()) + "</p>";
     }
+    html += "<p><a href=\"/web/\">Back</a></p>";
+    html += pageFooter();
+
+    HttpResponse r;
+    r.contentType = "text/html";
+    r.body = html;
+    return r;
+}
+
+// ---------------------------------------------------------------------------
+// GET /web/riskai -> RiskAI FMEA workflows as HTML (review layer).
+// ---------------------------------------------------------------------------
+HttpResponse WebServer::webRiskai(const HttpRequest& req) {
+    if (!canRead(req)) return unauthorized();
+    std::string html = pageHeader("Lodestar — RiskAI FMEA");
+    html += "<h1>RiskAI FMEA Workflows</h1>";
+
+    ra::FmeaWorkflowService fmea(db_);
+    auto wfs = fmea.listWorkflows();
+    if (wfs.isOk()) {
+        html += "<table><tr><th>Name</th><th>System</th><th>Stage</th>"
+                "<th>Created</th></tr>";
+        for (const auto& w : wfs.value()) {
+            html += "<tr><td>" + htmlEscape(w.name) + "</td><td>" +
+                    htmlEscape(w.system) + "</td><td>" +
+                    htmlEscape(ra::stageName(w.stage)) + "</td><td>" +
+                    htmlEscape(w.createdAt) + "</td></tr>";
+        }
+        html += "</table>";
+    } else {
+        html += "<p>No FMEA workflows: " + htmlEscape(wfs.error()) + "</p>";
+    }
+    html += "<p><a href=\"/web/\">Back</a></p>";
+    html += pageFooter();
+
+    HttpResponse r;
+    r.contentType = "text/html";
+    r.body = html;
+    return r;
+}
+
+// ---------------------------------------------------------------------------
+// GET /web/integratehub -> IntegrateHub PR/CR as HTML (review layer).
+// ---------------------------------------------------------------------------
+HttpResponse WebServer::webIntegratehub(const HttpRequest& req) {
+    if (!canRead(req)) return unauthorized();
+    std::string html = pageHeader("Lodestar — IntegrateHub");
+    html += "<h1>IntegrateHub Problem Reports &amp; Change Requests</h1>";
+
+    ih::ImpactAnalysisService impact(db_);
+    auto prs = impact.listPrs();
+    auto crs = impact.listCrs();
+
+    html += "<h2>Problem Reports</h2><table><tr><th>Title</th><th>Severity</th>"
+            "<th>Status</th></tr>";
+    if (prs.isOk()) {
+        for (const auto& p : prs.value()) {
+            html += "<tr><td>" + htmlEscape(p.title) + "</td><td>" +
+                    htmlEscape(p.severity) + "</td><td>" +
+                    htmlEscape(p.status) + "</td></tr>";
+        }
+    }
+    html += "</table>";
+
+    html += "<h2>Change Requests</h2><table><tr><th>Title</th><th>Status</th>"
+            "<th>Entity</th></tr>";
+    if (crs.isOk()) {
+        for (const auto& c : crs.value()) {
+            html += "<tr><td>" + htmlEscape(c.title) + "</td><td>" +
+                    htmlEscape(c.status) + "</td><td>" +
+                    htmlEscape(c.entityType + ":" + c.entityId) +
+                    "</td></tr>";
+        }
+    }
+    html += "</table>";
+
     html += "<p><a href=\"/web/\">Back</a></p>";
     html += pageFooter();
 
