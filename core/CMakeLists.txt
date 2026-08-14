@@ -147,7 +147,8 @@ target_compile_definitions(lodestar_riskai PRIVATE
 # --- IntegrateHub: cross-disciplinary issue/coordination model (S1 Phase 4) ---
 lodestar_add_module(lodestar_integratehub
     integratehub/IntegrateHubService.cpp
-    integratehub/ImpactAnalysisService.cpp)
+    integratehub/ImpactAnalysisService.cpp
+    integratehub/CertificationControlService.cpp)
 target_link_libraries(lodestar_integratehub PUBLIC
     lodestar_common lodestar_persistence)
 
@@ -992,6 +993,18 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_integratehub)
     target_compile_definitions(lodestar_i1_impact_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill IntegrateHub 6.2: integration with certification control -------
+    # Test contract: docs/gap-fill-plan.md (Module 6.2). PR/CR + impact feed into
+    # the configuration-control view; PR/CR log emitted as a certification artifact.
+    add_executable(lodestar_i2_cert_control_tests
+        test/i2_cert_control_tests.cpp)
+    target_link_libraries(lodestar_i2_cert_control_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_integratehub)
+    target_compile_definitions(lodestar_i2_cert_control_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- Gap-Fill TraceLink 3.2: real-time multi-user collaboration ------------
