@@ -12,7 +12,8 @@ lodestar_add_module(lodestar_common
     common/Config.cpp
     common/Uuid.cpp
     common/Version.cpp
-    common/Sha256.cpp)
+    common/Sha256.cpp
+    common/QualityScoring.cpp)
 target_compile_definitions(lodestar_common PRIVATE _CRT_SECURE_NO_WARNINGS)
 
 # --- persistence: SQLite schema + DAOs + migration runner ------------------
@@ -123,7 +124,8 @@ lodestar_add_module(lodestar_riskai
     riskai/FmeaAssessor.cpp
     riskai/RiskReportService.cpp
     riskai/KnowledgeService.cpp
-    riskai/AgenticPipeline.cpp)
+    riskai/AgenticPipeline.cpp
+    riskai/AuthoringScoringService.cpp)
 target_link_libraries(lodestar_riskai PUBLIC
     lodestar_common lodestar_adapters lodestar_persistence)
 target_compile_definitions(lodestar_riskai PRIVATE
@@ -920,6 +922,21 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_riskai)
     target_compile_definitions(lodestar_r3_agentic_pipeline_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill RiskAI 1.7: inline requirement-quality scoring in TraceLink --
+    # Test contract: docs/gap-fill-plan.md (Module 1.7). Shared five-dimension
+    # QualityScoring service used by RiskAI + TraceLink; TraceLink authoring
+    # surface scores on save with per-dimension flags + suggested rewording;
+    # scoring determinism + a real TraceLink write hook.
+    add_executable(lodestar_r7_quality_scoring_tests
+        test/r7_quality_scoring_tests.cpp)
+    target_link_libraries(lodestar_r7_quality_scoring_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink
+        lodestar_riskai)
+    target_compile_definitions(lodestar_r7_quality_scoring_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------

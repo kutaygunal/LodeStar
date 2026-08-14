@@ -18,7 +18,7 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 - [x] RiskAI 1.4 AIAG/VDA-compatible export
 - [x] RiskAI 1.5 Multi-document knowledge input
 - [x] RiskAI 1.6 Agentic / self-validating pipeline + `r3_agentic_pipeline_tests`
-- [ ] RiskAI 1.7 Inline requirement-quality scoring in TraceLink
+- [x] RiskAI 1.7 Inline requirement-quality scoring in TraceLink
 
 ## Wave 3 — Cert evidence
 - [ ] AssureCheck 2.2 Vetted standards-content library

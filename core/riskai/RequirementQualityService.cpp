@@ -8,97 +8,10 @@
 #include <sstream>
 #include <vector>
 
+#include "core/common/QualityScoring.h"
 namespace lodestar::riskai {
 
 namespace {
-
-// Trim leading/trailing whitespace.
-std::string trim(const std::string& s) {
-    size_t b = 0;
-    size_t e = s.size();
-    while (b < e && std::isspace(static_cast<unsigned char>(s[b]))) ++b;
-    while (e > b && std::isspace(static_cast<unsigned char>(s[e - 1]))) --e;
-    return s.substr(b, e - b);
-}
-
-// Lowercase a copy of the string.
-std::string lower(const std::string& s) {
-    std::string out = s;
-    for (char& c : out) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-    return out;
-}
-
-// Count whitespace-separated words.
-size_t wordCount(const std::string& s) {
-    std::istringstream ss(s);
-    std::string w;
-    size_t n = 0;
-    while (ss >> w) ++n;
-    return n;
-}
-
-// Count occurrences of a substring (case-insensitive).
-int countSub(const std::string& s, const std::string& sub) {
-    std::string ls = lower(s);
-    std::string lsub = lower(sub);
-    int n = 0;
-    size_t pos = 0;
-    while ((pos = ls.find(lsub, pos)) != std::string::npos) {
-        ++n;
-        pos += lsub.size();
-    }
-    return n;
-}
-
-// Whether the text contains any vague / non-verifiable wording.
-bool hasVagueWord(const std::string& s) {
-    static const char* kWords[] = {
-        "stuff", "handle", "etc", "some", "thing", "things", "various",
-        "maybe", "good", "fast", "quick", "nice", "properly", "roughly",
-        "approximately", "about", "soon", "later", "many", "few", "big",
-        "small", "large", "enough", "appropriate", "suitable", "etc.",
-        "and so on", "whatever", "somehow", "somewhat", "kind of", "sort of"
-    };
-    std::string ls = lower(s);
-    for (const char* w : kWords) {
-        if (ls.find(w) != std::string::npos) return true;
-    }
-    return false;
-}
-
-// Whether the text contains a measurable unit or a numeric value.
-bool hasUnitOrNumber(const std::string& s) {
-    static const char* kUnits[] = {
-        "km/h", "m/s", "hz", "mhz", "ghz", "khz", "db", "ms", "km", "kg",
-        "volt", "amp", "watt", "percent", "degree", "second", "minute",
-        "hour", "meter", "metre", "byte", "bit", "kbps", "mbps", "gbps"
-    };
-    std::string ls = lower(s);
-    for (const char* u : kUnits) {
-        if (ls.find(u) != std::string::npos) return true;
-    }
-    for (char c : s) {
-        if (std::isdigit(static_cast<unsigned char>(c))) return true;
-    }
-    return false;
-}
-
-// Whether the text contains an action / verifiable verb.
-bool hasActionVerb(const std::string& s) {
-    static const char* kVerbs[] = {
-        "display", "show", "return", "compute", "calculate", "provide",
-        "produce", "output", "send", "receive", "store", "record", "log",
-        "detect", "measure", "report", "generate", "update", "set", "enable",
-        "disable", "start", "stop", "validate", "verify", "check", "convert",
-        "transmit", "display", "indicate", "alert", "notify", "reject",
-        "accept", "allow", "deny", "lock", "unlock", "open", "close"
-    };
-    std::string ls = lower(s);
-    for (const char* v : kVerbs) {
-        if (ls.find(v) != std::string::npos) return true;
-    }
-    return false;
-}
 
 // Clamp an int into [0,100].
 int clamp100(int v) {
@@ -187,56 +100,18 @@ bool RequirementQualityService::parseReply(const std::string& text,
 QualityScore RequirementQualityService::heuristicScore(
     const tracelink::Entity& req) const {
     std::string body = req.text.empty() ? req.name : req.text;
-    std::string text = trim(body);
-    size_t wc = wordCount(text);
-    int shall = countSub(text, "shall");
-    bool hasShall = shall > 0;
-    bool vague = hasVagueWord(text);
-    bool measurable = hasUnitOrNumber(text);
-    bool action = hasActionVerb(text);
-
+    // Gap-Fill 1.7: delegate to the shared five-dimension scoring so RiskAI and
+    // TraceLink agree exactly. The shared service is deterministic and lives in
+    // core/common (no LLM, no dependency cycle).
+    lodestar::common::QualityScore shared =
+        lodestar::common::scoreQuality(body);
     QualityScore s;
-
-    // Clarity: formal "shall" + adequate length.
-    s.clarity = 0;
-    if (hasShall) s.clarity += 40;
-    if (wc >= 5) s.clarity += 30;
-    if (wc >= 8) s.clarity += 30;
-    s.clarity = clamp100(s.clarity);
-
-    // Testability: verifiable verb + measurable unit/number + formal marker.
-    s.testability = 0;
-    if (hasShall) s.testability += 30;
-    if (measurable) s.testability += 40;
-    if (action) s.testability += 30;
-    s.testability = clamp100(s.testability);
-
-    // Atomicity: single "shall" (single responsibility), short scope, no
-    // conjunction splitting into multiple requirements.
-    s.atomicity = 0;
-    if (shall == 1) s.atomicity += 40;
-    else if (shall == 0) s.atomicity += 20;
-    if (wc <= 20) s.atomicity += 30;
-    if (countSub(text, " and ") == 0 && countSub(text, " or ") == 0)
-        s.atomicity += 10;
-    s.atomicity = clamp100(s.atomicity);
-
-    // Completeness: subject + verb + object, adequate detail.
-    s.completeness = 0;
-    if (hasShall) s.completeness += 40;
-    if (wc >= 5) s.completeness += 30;
-    if (wc >= 8) s.completeness += 30;
-    s.completeness = clamp100(s.completeness);
-
-    // Ambiguity: start high, penalize vague wording and informal phrasing.
-    s.ambiguity = 100;
-    if (vague) s.ambiguity -= 30;
-    if (!hasShall) s.ambiguity -= 20;
-    if (wc < 3) s.ambiguity -= 20;
-    s.ambiguity = clamp100(s.ambiguity);
-
-    s.overall = clamp100((s.clarity + s.testability + s.atomicity +
-                          s.completeness + s.ambiguity) / 5);
+    s.clarity = shared.clarity;
+    s.testability = shared.testability;
+    s.atomicity = shared.atomicity;
+    s.completeness = shared.completeness;
+    s.ambiguity = shared.ambiguity;
+    s.overall = shared.overall;
     return s;
 }
 
