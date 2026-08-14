@@ -80,7 +80,10 @@ lodestar_add_module(lodestar_scenario
     scenario/Baseband.cpp
     scenario/AutomationApi.cpp
     scenario/Trajectory.cpp
-    scenario/RfImpairments.cpp)
+    scenario/RfImpairments.cpp
+    scenario/HilStream.cpp
+    scenario/RtkReferenceStation.cpp
+    scenario/AGnssAssistance.cpp)
 target_link_libraries(lodestar_scenario PUBLIC lodestar_common)
 
 # --- Stub modules (empty libraries that compile) ----------------------------
@@ -1091,6 +1094,33 @@ if(LODESTAR_BUILD_TESTS)
     target_link_libraries(lodestar_f2_tool_qual_dossier_tests PRIVATE
         lodestar_common
         lodestar_testforge)
+
+    # --- Gap-Fill ScenarioForge 5.1: real-time HIL stream -----------------------
+    # Test contract: docs/gap-fill-plan.md (Module 5.1). 100 Hz HIL feed with
+    # latency stats, jitter buffering, trajectory interpolation + prediction.
+    add_executable(lodestar_s1_hil_stream_tests
+        test/s1_hil_stream_tests.cpp)
+    target_link_libraries(lodestar_s1_hil_stream_tests PRIVATE
+        lodestar_common
+        lodestar_scenario)
+
+    # --- Gap-Fill ScenarioForge 5.4: advanced interference & multipath ---------
+    # Test contract: docs/gap-fill-plan.md (Module 5.4). Matched-spectrum, CW,
+    # AWGN, jamming, spoofing + data-driven environment models.
+    add_executable(lodestar_s2_interference_tests
+        test/s2_interference_tests.cpp)
+    target_link_libraries(lodestar_s2_interference_tests PRIVATE
+        lodestar_common
+        lodestar_scenario)
+
+    # --- Gap-Fill ScenarioForge 5.2 + 5.3: RTK VRS + A-GNSS ---------------------
+    # Test contract: docs/gap-fill-plan.md (Module 5.2, 5.3). RTCM 3.3 / NTRIP
+    # corrections + almanac/nav/acquisition assistance files.
+    add_executable(lodestar_s3_rtk_agnss_tests
+        test/s3_rtk_agnss_tests.cpp)
+    target_link_libraries(lodestar_s3_rtk_agnss_tests PRIVATE
+        lodestar_common
+        lodestar_scenario)
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of
