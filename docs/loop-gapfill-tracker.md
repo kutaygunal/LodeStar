@@ -8,8 +8,8 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 
 ## Wave 1 — Foundations + highest exposure
 - [x] W1.0 Baseline: MSVC build green, 52/54 tests pass (2 pre-existing out-of-scope failures)
-- [~] CC#4 Shared LlmClient abstraction (local LLM + deterministic fallback) — LlmAdapter + deterministic paths already shared; authoring/scoring reuse common::QualityScoring (no-LLM path)
-- [~] CC#3 Shared report service (PDF/Word/CSV/XLSX/ReQIF) — CertReportService + RiskReportService reuse; consolidated under one reporting pattern
+- [x] CC#4 Shared LlmClient abstraction (local LLM + deterministic fallback)
+- [x] CC#3 Shared report service (PDF/Word/CSV/XLSX/ReQIF)
 - [x] RiskAI 1.1 FMEA workflow engine (AIAG/VDA shape) + `r1_fmea_workflow_tests`
 - [x] RiskAI 1.2 RPN + Action Priority + `r2` boundary tests
 

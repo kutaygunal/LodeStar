@@ -159,6 +159,7 @@ lodestar_add_module(lodestar_adapters
     adapters/AdapterRegistry.cpp
     adapters/MockAdapter.cpp
     adapters/LlmAdapter.cpp
+    adapters/LlmClient.cpp
     adapters/PythonAdapter.cpp
     adapters/SpirentAdapter.cpp
     adapters/RsAdapter.cpp
@@ -1102,6 +1103,25 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_tracelink)
     target_compile_definitions(lodestar_cc2_security_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill Cross-cutting #4: shared LlmClient abstraction -----------------
+    # Test contract: docs/gap-fill-plan.md (Cross-cutting #4). Local-only LLM
+    # client with no-egress guard and deterministic fallback.
+    add_executable(lodestar_cc4_llm_client_tests
+        test/cc4_llm_client_tests.cpp)
+    target_link_libraries(lodestar_cc4_llm_client_tests PRIVATE
+        lodestar_common
+        lodestar_adapters)
+
+    # --- Gap-Fill Cross-cutting #3: one shared reporting service -----------------
+    # Test contract: docs/gap-fill-plan.md (Cross-cutting #3). A shared
+    # ReportService (HTML/CSV/JSON; PDF/Word/ReQIF in CertReportService) reused by
+    # RiskAI, AssureCheck and IntegrateHub; consistent standard-format output.
+    add_executable(lodestar_cc3_shared_report_tests
+        test/cc3_shared_report_tests.cpp)
+    target_link_libraries(lodestar_cc3_shared_report_tests PRIVATE
+        lodestar_common
+        lodestar_assurecheck)
 
     # --- Gap-Fill TestForge 4.1: decision / MC-DC coverage ---------------------
     # Test contract: docs/gap-fill-plan.md (Module 4.1). LlvmCovImport accepts a
