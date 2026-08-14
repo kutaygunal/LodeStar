@@ -121,7 +121,8 @@ lodestar_add_module(lodestar_riskai
     riskai/RequirementQualityService.cpp
     riskai/FmeaWorkflowService.cpp
     riskai/FmeaAssessor.cpp
-    riskai/RiskReportService.cpp)
+    riskai/RiskReportService.cpp
+    riskai/KnowledgeService.cpp)
 target_link_libraries(lodestar_riskai PUBLIC
     lodestar_common lodestar_adapters lodestar_persistence)
 target_compile_definitions(lodestar_riskai PRIVATE
@@ -889,6 +890,21 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_riskai)
     target_compile_definitions(lodestar_r4_fmea_export_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill RiskAI 1.5: multi-document knowledge input -----------------
+    # Test contract: docs/gap-fill-plan.md (Module 1.5). Ingestion of
+    # requirements/flow charts/standards/historical data/drawing text/
+    # lessons-learned and a lightweight deterministic retrieval step that feeds
+    # context to the LLM prompt, keeping the deterministic fallback working with
+    # no LLM.
+    add_executable(lodestar_r5_knowledge_tests
+        test/r5_knowledge_tests.cpp)
+    target_link_libraries(lodestar_r5_knowledge_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_riskai)
+    target_compile_definitions(lodestar_r5_knowledge_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------

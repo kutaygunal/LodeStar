@@ -16,7 +16,7 @@ Legend: `[ ]` todo · `[x]` done · `[~]` in progress · `[-]` skipped/out-of-sc
 ## Wave 2 — RiskAI depth
 - [x] RiskAI 1.3 FMEA assessment of existing documents + `r2_fmea_assess_tests`
 - [x] RiskAI 1.4 AIAG/VDA-compatible export
-- [ ] RiskAI 1.5 Multi-document knowledge input
+- [x] RiskAI 1.5 Multi-document knowledge input
 - [ ] RiskAI 1.6 Agentic / self-validating pipeline + `r3_agentic_pipeline_tests`
 - [ ] RiskAI 1.7 Inline requirement-quality scoring in TraceLink
 
