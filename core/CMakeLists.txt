@@ -47,7 +47,8 @@ lodestar_add_module(lodestar_tracelink
     tracelink/UserService.cpp
     tracelink/OslcService.cpp
     tracelink/VariantService.cpp
-    tracelink/CollaborationService.cpp)
+    tracelink/CollaborationService.cpp
+    tracelink/SignatureService.cpp)
 target_link_libraries(lodestar_tracelink PUBLIC lodestar_common lodestar_persistence)
 
 # --- ScenarioForge (real GNSS math, Phase 4) ---------------------------------
@@ -997,6 +998,19 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_persistence
         lodestar_tracelink)
     target_compile_definitions(lodestar_t1_collab_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill TraceLink 3.4: electronic signatures ---------------------------
+    # Test contract: docs/gap-fill-plan.md (Module 3.4). Approval-signature model
+    # (signer, role, timestamp, hash of approved content) on the review/approval
+    # workflow; immutable persistence; validity on content change. Migration 033.
+    add_executable(lodestar_t4_signature_tests
+        test/t4_signature_tests.cpp)
+    target_link_libraries(lodestar_t4_signature_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_t4_signature_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
