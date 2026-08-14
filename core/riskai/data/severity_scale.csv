@@ -1,0 +1,14 @@
+# severity_scale.csv
+# RiskAI 1.2 - Deterministic Severity (S) rating scale (AIAG-VDA shape).
+# Values 1..10. Columns: rating, impact, criteria
+rating,impact,criteria
+1,Minor,"No discernible effect on the product or user"
+2,Very Low,"Minor effect; customer not inconvenienced"
+3,Low,"Moderate effect; customer slightly inconvenienced"
+4,Low-Medium,"Some degradation of function; customer notices"
+5,Medium,"Performance partially degraded; customer dissatisfied"
+6,Medium-High,"Significant degradation; partial loss of function"
+7,High,"Loss of primary function; system may not meet requirement"
+8,Very High,"Loss of primary function; safety/regulatory concern"
+9,Extreme,"Potential safety impact; noncompliance with regulations"
+10,Safety-Critical,"Safety or regulatory noncompliance; could endanger people"

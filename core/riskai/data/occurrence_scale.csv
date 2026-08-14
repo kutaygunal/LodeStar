@@ -1,0 +1,14 @@
+# occurrence_scale.csv
+# RiskAI 1.2 - Deterministic Occurrence (O) rating scale (AIAG-VDA shape).
+# Values 1..10. Columns: rating, impact, criteria
+rating,impact,criteria
+1,Very Low,"Failure unlikely; < 0.01 failures per 1000 parts"
+2,Low,"Relatively few failures; 0.01 to 0.1 per 1000 parts"
+3,Low,"Occasional failures; 0.1 to 0.5 per 1000 parts"
+4,Low-Medium,"Moderate failures; 0.5 to 1 per 1000 parts"
+5,Medium,"Moderate failures; 1 to 2 per 1000 parts"
+6,Medium-High,"Moderately high failures; 2 to 5 per 1000 parts"
+7,High,"High failures; 5 to 10 per 1000 parts"
+8,Very High,"Very high failures; 10 to 20 per 1000 parts"
+9,Extreme,"Extremely high failures; 20 to 50 per 1000 parts"
+10,Safety-Critical,"Failure is almost certain; > 50 per 1000 parts"

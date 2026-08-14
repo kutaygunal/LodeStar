@@ -1,0 +1,80 @@
+Start testing: Aug 14 16:25 Eastern Daylight Time
+----------------------------------------------------------
+55/55 Testing: lodestar_r1_fmea_workflow_tests
+55/55 Test: lodestar_r1_fmea_workflow_tests
+Command: "C:/Users/kutay/Desktop/Projects/Lodestar/build-msvc/core/lodestar_r1_fmea_workflow_tests.exe"
+Directory: C:/Users/kutay/Desktop/Projects/Lodestar/build-msvc/core
+"lodestar_r1_fmea_workflow_tests" start time: Aug 14 16:25 Eastern Daylight Time
+Output:
+----------------------------------------------------------
+RISKAI R1 FMEA WORKFLOW + SCORING TESTS (migrations: C:/Users/kutay/Desktop/Projects/Lodestar/core/persistence/migrations)
+
+-- T1. migration 028 + workflow CRUD round-trip --
+  [PASS] riskai_fmea table exists
+  [PASS] riskai_fmea_function table exists
+  [PASS] riskai_fmea_row table exists
+  [PASS] createWorkflow() ok
+  [PASS] createWorkflow() returns a non-empty id
+  [PASS] findWorkflow() ok
+  [PASS] found workflow name == "Receiver FMEA"
+  [PASS] new workflow starts at Planning
+  [PASS] found workflow system == "GNSS receiver"
+  [PASS] listWorkflows() returns 1 workflow
+  [PASS] deleteWorkflow() ok
+  [PASS] workflow gone after delete
+
+-- T2. stage gating (required-field rules) --
+  [PASS] createWorkflow() ok
+  [PASS] advanceStage() blocked (no system set)
+  [PASS] blocked advance reports ValidationFailed
+  [PASS] createWorkflow() with system ok
+  [PASS] advance Planning -> Structure ok
+  [PASS] advance Structure -> Function blocked (no structure)
+  [PASS] blocked Structure advance reports ValidationFailed
+
+-- T3. full progression through all 7 stages --
+  [PASS] Planning -> Structure
+  [PASS] updateWorkflow() ok
+  [PASS] Structure -> Function
+  [PASS] addFunction() ok
+  [PASS] Function -> Failure
+  [PASS] addRow() ok
+  [PASS] Failure -> Risk
+  [PASS] Risk -> Optimization blocked (row not rated)
+  [PASS] blocked Risk advance reports ValidationFailed
+
+-- T4. RPN + Action Priority boundary correctness --
+  [PASS] RPN 5*4*3 == 60
+  [PASS] RPN 10*10*10 == 1000
+  [PASS] S=10 => High AP
+  [PASS] out-of-range clamps to 1..10 (1*10*1 == 10)
+  [PASS] S>=9 => High regardless of O/D
+  [PASS] S=7,O=6,D=6 => High
+  [PASS] S=7,O=5,D=6 => Medium (not High)
+  [PASS] S=5,O=7,D=8 => High
+  [PASS] S=5,O=7,D=7 => Medium
+  [PASS] S<=4,O<=5,D<=5 => Low
+  [PASS] S=4,O=6,D=5 => Medium
+  [PASS] S<=6,O<=3,D<=4 => Low
+  [PASS] S=6,O=4,D=4 => Medium
+  [PASS] rated row is recognized as rated
+  [PASS] unrated row (S=0) is not rated
+  [PASS] row without computed AP is not rated
+
+-- T5. rated row unblocks Risk -> Optimization --
+  [PASS] addRow() with ratings ok
+  [PASS] rated row allows Risk -> Optimization
+  [PASS] 1 row persisted
+  [PASS] persisted AP == High (S=7,O=6,D=6)
+  [PASS] persisted severity == 7
+
+Gap-Fill RiskAI 1.1/1.2 FMEA workflow + scoring: 0 failure(s)
+<end of output>
+Test time =   0.39 sec
+----------------------------------------------------------
+Test Passed.
+"lodestar_r1_fmea_workflow_tests" end time: Aug 14 16:25 Eastern Daylight Time
+"lodestar_r1_fmea_workflow_tests" time elapsed: 00:00:00
+----------------------------------------------------------
+
+End testing: Aug 14 16:25 Eastern Daylight Time

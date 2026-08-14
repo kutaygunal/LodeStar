@@ -1,0 +1,14 @@
+# detection_scale.csv
+# RiskAI 1.2 - Deterministic Detection (D) rating scale (AIAG-VDA shape).
+# Values 1..10 (lower = better detection). Columns: rating, impact, criteria
+rating,impact,criteria
+1,Very High,"Controls will almost certainly detect the failure"
+2,High,"Controls likely to detect the failure"
+3,High,"Controls have a good chance of detecting the failure"
+4,Moderately High,"Controls moderately likely to detect the failure"
+5,Medium,"Controls may detect the failure"
+6,Low,"Controls unlikely to detect the failure"
+7,Very Low,"Controls very unlikely to detect the failure"
+8,Remote,"Controls have poor chance of detecting the failure"
+9,Very Remote,"Controls almost certainly will not detect the failure"
+10,Impossible,"No known controls can detect the failure"

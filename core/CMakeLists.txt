@@ -118,9 +118,12 @@ target_link_libraries(lodestar_assurecheck PUBLIC
 # --- RiskAI: LLM-assisted FMEA (S1 Phase 3) ---------------------------------
 lodestar_add_module(lodestar_riskai
     riskai/RiskAiService.cpp
-    riskai/RequirementQualityService.cpp)
+    riskai/RequirementQualityService.cpp
+    riskai/FmeaWorkflowService.cpp)
 target_link_libraries(lodestar_riskai PUBLIC
-    lodestar_common lodestar_adapters)
+    lodestar_common lodestar_adapters lodestar_persistence)
+target_compile_definitions(lodestar_riskai PRIVATE
+    LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 # --- IntegrateHub: cross-disciplinary issue/coordination model (S1 Phase 4) ---
 lodestar_add_module(lodestar_integratehub
     integratehub/IntegrateHubService.cpp)
@@ -844,6 +847,20 @@ if(LODESTAR_BUILD_TESTS)
         lodestar_assurecheck
         lodestar_tracelink)
     target_compile_definitions(lodestar_s3_phase4_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
+    # --- Gap-Fill RiskAI 1.1 + 1.2: FMEA workflow engine + RPN/AP scoring -----
+    # Test contract: docs/gap-fill-plan.md (Module 1). Verifies the AIAG/VDA
+    # seven-stage workflow state machine (CRUD, stage gating, required-field
+    # rules) via migration 028, plus deterministic RPN and Action Priority
+    # scoring against every matrix boundary.
+    add_executable(lodestar_r1_fmea_workflow_tests
+        test/r1_fmea_workflow_tests.cpp)
+    target_link_libraries(lodestar_r1_fmea_workflow_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_riskai)
+    target_compile_definitions(lodestar_r1_fmea_workflow_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
