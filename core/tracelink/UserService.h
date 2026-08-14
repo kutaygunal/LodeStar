@@ -45,6 +45,15 @@ public:
     // Returns the user for a valid, unexpired session; fails otherwise.
     common::Result<UserAccount> currentUser(const std::string& token);
 
+    // Session lifetime in days used for new sessions (default 1).
+    void setSessionLifetimeDays(int days);
+
+    // Explicitly expire a session token (marks it expired immediately).
+    common::Result<void> expireToken(const std::string& token);
+
+    // Whether a session token is currently valid and unexpired.
+    common::Result<bool> isSessionValid(const std::string& token);
+
     // Lists all users.
     common::Result<std::vector<UserAccount>> listUsers();
 
@@ -74,6 +83,7 @@ private:
     persistence::Database& db_;
     RbacService rbac_;
     TraceLinkService tracelink_;
+    int sessionLifetimeDays_ = 1;
 };
 
 }  // namespace lodestar::tracelink

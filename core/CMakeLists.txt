@@ -1057,6 +1057,19 @@ if(LODESTAR_BUILD_TESTS)
     target_compile_definitions(lodestar_t1_server_persistence_tests PRIVATE
         LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
 
+    # --- Gap-Fill Cross-cutting #2: security -------------------------------------
+    # Test contract: docs/gap-fill-plan.md (Cross-cutting #2). Iterated password
+    # KDF (not single-pass, never plaintext), session/token expiry, and RBAC
+    # enforcement at the service boundary.
+    add_executable(lodestar_cc2_security_tests
+        test/cc2_security_tests.cpp)
+    target_link_libraries(lodestar_cc2_security_tests PRIVATE
+        lodestar_common
+        lodestar_persistence
+        lodestar_tracelink)
+    target_compile_definitions(lodestar_cc2_security_tests PRIVATE
+        LODESTAR_MIGRATIONS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/persistence/migrations")
+
     # --- S3 Phase 2: CTest wiring ---------------------------------------------
     # Every *_tests target defined above gets registered with CTest instead of
     # relying solely on ci/run_all_tests.{sh,ps1} to grep exit codes. This is

@@ -66,8 +66,43 @@ bool isValidRole(const std::string& role) {
            role == "viewer";
 }
 
+// Iterated key-derivation function (PBKDF2-style): the password is hashed
+// repeatedly with the salt, so brute-force of a leaked hash is far more costly
+// than a single SHA-256. This is the gap-fill (CC#2) replacement for the
+// single-pass hashPassword below.
+constexpr int kKdfIterations = 10000;
+
+// Iterated KDF hash: H^iterations(salt || password).
+std::string kdfHash(const std::string& salt, const std::string& password) {
+    std::string h = salt + password;
+    for (int i = 0; i < kKdfIterations; ++i) h = sha256Hex(h);
+    return h;
+}
+
+// Legacy single-pass hash (kept to verify pre-existing accounts that were
+// registered before the iterated KDF shipped).
 std::string hashPassword(const std::string& salt, const std::string& password) {
     return sha256Hex(salt + password);
+}
+
+// Verify a stored "salt:hash" credential. New accounts use the iterated KDF
+// (stored as "iter:salt:hash"); legacy accounts use the single-pass hash
+// (stored as "salt:hash"). Returns true on match.
+bool verifyPassword(const std::string& stored, const std::string& password) {
+    size_t colon = stored.find(':');
+    if (colon == std::string::npos) return false;
+    std::string salt = stored.substr(0, colon);
+    std::string rest = stored.substr(colon + 1);
+    if (salt == "iter" && rest.size() > 1) {
+        // "iter:salt:hash" -> second ':' separates salt and hash.
+        size_t c2 = rest.find(':');
+        if (c2 == std::string::npos) return false;
+        std::string realSalt = rest.substr(0, c2);
+        std::string realHash = rest.substr(c2 + 1);
+        return kdfHash(realSalt, password) == realHash;
+    }
+    // Legacy single-pass.
+    return hashPassword(salt, password) == rest;
 }
 
 }  // namespace
@@ -100,9 +135,11 @@ common::Result<UserAccount> UserService::registerUser(
                                                 "user already exists: " + username);
     }
 
-    // Salted SHA-256: store "salt:hash" so the plaintext is never persisted.
+    // Iterated salted KDF: store "iter:salt:kdfHash" so the plaintext is never
+    // persisted and the stored hash resists offline brute-force. This is the
+    // gap-fill (CC#2) upgrade from the single-pass salted SHA-256.
     std::string salt = newUuid();
-    std::string stored = salt + ":" + hashPassword(salt, password);
+    std::string stored = "iter:" + salt + ":" + kdfHash(salt, password);
 
     UserAccount u;
     u.id = newUuid();
@@ -138,18 +175,19 @@ common::Result<std::string> UserService::login(const std::string& username,
         return common::Result<std::string>::err(common::ErrorCode::Internal,
                                                 "malformed stored password hash");
     }
-    std::string salt = stored.substr(0, colon);
-    std::string hash = stored.substr(colon + 1);
-    if (hashPassword(salt, password) != hash) {
+    if (!verifyPassword(stored, password)) {
         return common::Result<std::string>::err(common::ErrorCode::ValidationFailed,
                                                 "invalid credentials");
     }
 
     std::string token = newUuid() + newUuid();
+    // Build the expiry modifier explicitly (e.g. "+1 days") so the SQLite
+    // datetime() function gets a well-formed modifier.
+    std::string modifier = "+" + std::to_string(sessionLifetimeDays_) + " days";
     auto res = exec(db_.handle(),
                     "INSERT INTO sessions (token, user_id, expires_at) "
-                    "VALUES (?, ?, datetime('now', '+1 day'));",
-                    std::vector<std::string>{token, id});
+                    "VALUES (?, ?, datetime('now', ?));",
+                    std::vector<std::string>{token, id, modifier});
     if (res.failed()) {
         return common::Result<std::string>::err(common::ErrorCode::DatabaseError,
                                                 res.error());
@@ -165,6 +203,35 @@ common::Result<void> UserService::logout(const std::string& token) {
                                          res.error());
     }
     return common::Result<void>::ok();
+}
+
+void UserService::setSessionLifetimeDays(int days) {
+    sessionLifetimeDays_ = days < 1 ? 1 : days;
+}
+
+common::Result<void> UserService::expireToken(const std::string& token) {
+    if (token.empty()) {
+        return common::Result<void>::err(common::ErrorCode::InvalidArgument,
+                                         "token must not be empty");
+    }
+    // Mark the session expired by setting its expiry into the past.
+    auto res = exec(db_.handle(),
+                    "UPDATE sessions SET expires_at=datetime('now','-1 hour') "
+                    "WHERE token=?;",
+                    std::vector<std::string>{token});
+    if (res.failed()) {
+        return common::Result<void>::err(common::ErrorCode::DatabaseError,
+                                         res.error());
+    }
+    return common::Result<void>::ok();
+}
+
+common::Result<bool> UserService::isSessionValid(const std::string& token) {
+    std::string userId = queryScalar(
+        db_.handle(),
+        "SELECT user_id FROM sessions WHERE token=? AND expires_at > datetime('now');",
+        std::vector<std::string>{token});
+    return common::Result<bool>::ok(!userId.empty());
 }
 
 common::Result<UserAccount> UserService::currentUser(const std::string& token) {
